@@ -3,8 +3,12 @@ from __future__ import annotations
 import html,json,math,re,urllib.parse,urllib.request
 from datetime import datetime,timezone
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'docs/gold/data/latest.json';CAL=ROOT/'docs/gold/data/weekly_calibration.json'
-UA='Mozilla/5.0 GoldEquilibriumPrice/2.0';MACRO_SERIES=['DX-Y.NYB','^TNX','^VIX','TIP']
+ROOT=Path(__file__).resolve().parents[2]
+OUT=ROOT/'docs/gold/data/latest.json'
+CAL=ROOT/'docs/gold/data/weekly_calibration.json'
+FCAL=ROOT/'docs/gold/data/fundamentals_calibration.json'
+UA='Mozilla/5.0 GoldEquilibriumPrice/3.0';MACRO_SERIES=['DX-Y.NYB','^TNX','^VIX','TIP']
+
 def get_text(url,timeout=45):
  r=urllib.request.Request(url,headers={'User-Agent':UA,'Accept':'*/*'})
  with urllib.request.urlopen(r,timeout=timeout) as x:return x.read().decode('utf-8',errors='replace')
@@ -55,8 +59,8 @@ def fetch_wgc(now):
    return parse_wgc(h,u)
   except Exception as e:errs.append(str(e))
  raise RuntimeError('WGC unavailable: '+' | '.join(errs))
-def load_cal():
- try:return json.loads(CAL.read_text())
+def load_json(path):
+ try:return json.loads(path.read_text(encoding='utf-8'))
  except:return None
 def fair_value(m,cal,gold_anchor):
  if not cal:return None
@@ -68,10 +72,21 @@ def fair_value(m,cal,gold_anchor):
   elif k in m:vals.append(m[k]['value'])
   else:return None
  x=[1.0]+[(v-a)/z for v,a,z in zip(vals,mu,sd)];return math.exp(sum(a*z for a,z in zip(x,b)))
-def overlay(w):
- strategic=w['bar_coin_t']+w['etf_t']+w['central_banks_t']+w['otc_other_t'];share=strategic/max(w['total_supply_t'],1);recycle=w['recycled_gold_t']/max(w['total_supply_t'],1);raw=math.exp(.35*(share-.50)-.20*(recycle-.27));mult=min(max(raw,.88),1.12);return {'strategic_demand_share':share,'recycling_share':recycle,'multiplier':mult,'status':'UNCALIBRATED_OVERLAY'}
+def physical_features(w):
+ supply=max(w['total_supply_t'],1.0);strategic=w['bar_coin_t']+w['etf_t']+w['central_banks_t']
+ return [strategic/supply,w['recycled_gold_t']/supply,(w.get('producer_hedging_t') or 0.0)/supply]
+def overlay(w,fcal):
+ x=physical_features(w);strategic=x[0];recycle=x[1]
+ if fcal:
+  b=fcal.get('beta') or [];mu=fcal.get('means') or [];sd=fcal.get('sds') or []
+  if len(b)==len(x)+1 and len(mu)==len(x) and len(sd)==len(x):
+   z=[1.0]+[(v-a)/s for v,a,s in zip(x,mu,sd)];ret=sum(a*v for a,v in zip(b,z));raw=math.exp(ret);mult=min(max(raw,.88),1.12);gate=fcal.get('walk_forward_gate') or 'PENDING'
+   return {'strategic_demand_share':strategic,'recycling_share':recycle,'producer_hedging_share':x[2],'predicted_next_quarter_return_pct':100*(raw-1),'raw_multiplier':raw,'multiplier':mult,'guardrail_active':mult!=raw,'status':'CALIBRATED' if gate=='PASS' else 'CALIBRATED_GATE_FAIL','walk_forward_gate':gate}
+ # Explicit fallback only when the calibration artifact is unavailable.
+ raw=math.exp(.35*(strategic-.50)-.20*(recycle-.27));mult=min(max(raw,.88),1.12)
+ return {'strategic_demand_share':strategic,'recycling_share':recycle,'producer_hedging_share':x[2],'predicted_next_quarter_return_pct':100*(raw-1),'raw_multiplier':raw,'multiplier':mult,'guardrail_active':mult!=raw,'status':'FALLBACK_HEURISTIC','walk_forward_gate':'PENDING'}
 def main():
- now=datetime.now(timezone.utc);err=[];p={'as_of_date':now.date().isoformat(),'generated_at_utc':now.isoformat(),'model_version':'gold-weekly-arx-hybrid-v2.0'}
+ now=datetime.now(timezone.utc);err=[];p={'as_of_date':now.date().isoformat(),'generated_at_utc':now.isoformat(),'model_version':'gold-weekly-arx-wgc-calibrated-v3.0'}
  try:spot=fetch_spot();p['market']=spot
  except Exception as e:err.append('spot: '+str(e));spot=None
  macro={}
@@ -81,9 +96,10 @@ def main():
  p['macro']=macro
  try:w=fetch_wgc(now);p['fundamentals']=w
  except Exception as e:err.append('WGC: '+str(e));w=None
- cal=load_cal();p['calibration']=cal;mp=fair_value(macro,cal,spot['usd_oz']) if spot else None
+ cal=load_json(CAL);fcal=load_json(FCAL);p['calibration']=cal;p['fundamentals_calibration']=fcal;mp=fair_value(macro,cal,spot['usd_oz']) if spot else None
  if spot and w and mp:
-  ph=overlay(w);raw=mp*ph['multiplier'];lo,hi=.55*spot['usd_oz'],1.55*spot['usd_oz'];ps=min(max(raw,lo),hi);gate=(cal or {}).get('walk_forward_gate');p['model']={'weekly_fair_value_usd_oz':round(mp,2),'macro_fair_value_usd_oz':round(mp,2),'physical_overlay':{k:(round(v,6) if isinstance(v,float) else v) for k,v in ph.items()},'fundamental_p_star_usd_oz':round(ps,2),'raw_combined_p_star_usd_oz':round(raw,2),'market_vs_pstar_pct':round((spot['usd_oz']/ps-1)*100,2),'guardrail_active':ps!=raw,'status':'PROVISIONAL','confidence':'MEDIUM' if gate=='PASS' else 'LOW','governance':{'weekly_walk_forward':gate or 'PENDING','fundamentals_historical_calibration':'PENDING','no_imputation':True,'publication_gate':'PROVISIONAL_ONLY'}};p['model_status']='PROVISIONAL'
+  ph=overlay(w,fcal);raw=mp*ph['multiplier'];lo,hi=.55*spot['usd_oz'],1.55*spot['usd_oz'];ps=min(max(raw,lo),hi);wg=(cal or {}).get('walk_forward_gate') or 'PENDING';fg=(fcal or {}).get('walk_forward_gate') or 'PENDING';fully_valid=wg=='PASS' and fg=='PASS' and not err;status='VALID' if fully_valid else 'PROVISIONAL';confidence='HIGH' if fully_valid else ('MEDIUM' if wg=='PASS' else 'LOW')
+  p['model']={'weekly_fair_value_usd_oz':round(mp,2),'macro_fair_value_usd_oz':round(mp,2),'physical_overlay':{k:(round(v,6) if isinstance(v,float) else v) for k,v in ph.items()},'fundamental_p_star_usd_oz':round(ps,2),'raw_combined_p_star_usd_oz':round(raw,2),'market_vs_pstar_pct':round((spot['usd_oz']/ps-1)*100,2),'guardrail_active':ps!=raw or bool(ph.get('guardrail_active')),'status':status,'confidence':confidence,'governance':{'weekly_walk_forward':wg,'fundamentals_historical_calibration':fg,'no_imputation':True,'publication_gate':'VALID' if fully_valid else 'PROVISIONAL_ONLY'}};p['model_status']=status
  else:p['model']=None;p['model_status']='UNAVAILABLE'
- p['errors']=err;p['data_quality']='OK' if not err else 'DEGRADED';OUT.parent.mkdir(parents=True,exist_ok=True);OUT.write_text(json.dumps(p,ensure_ascii=False,indent=2)+'\n');print(json.dumps(p,ensure_ascii=False,indent=2))
+ p['errors']=err;p['data_quality']='OK' if not err else 'DEGRADED';OUT.parent.mkdir(parents=True,exist_ok=True);OUT.write_text(json.dumps(p,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');print(json.dumps(p,ensure_ascii=False,indent=2))
 if __name__=='__main__':main()

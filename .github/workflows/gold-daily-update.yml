@@ -28,8 +28,8 @@ jobs:
       - name: Compile sources
         run: python -m compileall -q gold/src
 
-      - name: Calibrate weekly macro fair-value model
-        run: python gold/src/calibrate_gold_weekly_yahoo.py
+      - name: Calibrate weekly ARX fair-value model
+        run: python gold/src/calibrate_gold_weekly_arx.py
 
       - name: Update latest gold equilibrium data
         run: python gold/src/update_gold.py
@@ -42,8 +42,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No output changes"
           else
-            git commit -m "chore(gold): refresh weekly calibrated equilibrium data"
+            git commit -m "chore(gold): refresh ARX calibrated equilibrium data"
             git push origin HEAD:main
           fi
-
-# verify hardened WGC parser

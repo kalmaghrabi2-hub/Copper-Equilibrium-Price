@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'docs' / 'gold' / 'data' / 'latest.json'
 HISTORY = ROOT / 'docs' / 'gold' / 'data' / 'history.jsonl'
 MODEL_FILE = ROOT / 'gold' / 'model' / 'model.json'
-UA = 'GoldEquilibriumPrice/1.1 (+https://github.com/kalmaghrabi2-hub/copper-equilibrium-price)'
+UA = 'GoldEquilibriumPrice/2.0 (+https://github.com/kalmaghrabi2-hub/copper-equilibrium-price)'
 
 def text(url: str, timeout=35) -> str:
     r = requests.get(url, headers={'User-Agent': UA, 'Accept': '*/*'}, timeout=timeout)
@@ -61,8 +61,7 @@ def _row_values(table: pd.DataFrame, labels) -> list[float]:
     vals=[]
     for v in table.loc[idx].iloc[1:]:
         n=_num(v)
-        if n is not None:
-            vals.append(n)
+        if n is not None: vals.append(n)
         if len(vals)==5: break
     if len(vals)<5: raise ValueError(f'not enough quarterly values for {labels}: {vals}')
     return vals
@@ -105,7 +104,8 @@ def wgc_latest() -> dict:
                 'mine_production_t':mine[-1],'producer_hedging_t':hedging[-1],'recycled_gold_t':recycled[-1],'total_supply_t':supply[-1],
                 'technology_t':tech[-1],'bar_coin_t':bar[-1],'etf_t':etf[-1],'central_banks_t':cb[-1],
                 'quarter_avg_lbma_usd_oz':price[-1],
-                'pressure_last5':pressure,'pressure_median5':med,'pressure_current':cur,'physical_multiplier':physical_multiplier,
+                'pressure_last5':pressure,'pressure_median5':med,'pressure_current':cur,
+                'physical_multiplier':physical_multiplier,
                 'physical_status':'PROVISIONAL_5Q_NORMALIZATION'
             }
         except Exception as e:
@@ -114,27 +114,30 @@ def wgc_latest() -> dict:
             if cq==0: cq,cy=4,cy-1
     raise RuntimeError(last_error)
 
-def macro_pstar(model: dict, macro: dict) -> float:
+def macro_pstar(model: dict, macro: dict) -> tuple[float,float]:
+    if model.get('model_type') != 'monthly_return_bridge':
+        raise RuntimeError(f"Unsupported calibrated model type: {model.get('model_type')}")
+    r=model['reference']
     feats={
-        'DFII10':macro['DFII10']['value'],
-        'DTWEXBGS':macro['DTWEXBGS']['value'],
-        'T10YIE':macro['T10YIE']['value'],
-        'VIXCLS_LOG':math.log(max(1.0,macro['VIXCLS']['value']))
+        'REAL_YIELD_EASING': -(macro['DFII10']['value']-r['DFII10']),
+        'USD_WEAKENING': -math.log(macro['DTWEXBGS']['value']/r['DTWEXBGS']),
+        'BREAKEVEN_RISE': macro['T10YIE']['value']-r['T10YIE'],
+        'VIX_RISE': math.log(max(1.0,macro['VIXCLS']['value'])/max(1.0,r['VIXCLS'])),
+        'GOLD_MOMENTUM_L1': r['gold_momentum_l1']
     }
-    z=[]
-    for f in model['features']:
-        z.append((feats[f]-model['feature_mean'][f])/model['feature_std'][f])
-    logp=model['intercept']+sum(model['coefficients_standardized'][f]*zz for f,zz in zip(model['features'],z))
-    return math.exp(logp)
+    z={f:(feats[f]-model['feature_mean'][f])/model['feature_std'][f] for f in model['features']}
+    pred_ret=model['intercept']+sum(model['coefficients_standardized'][f]*z[f] for f in model['features'])
+    fair=float(r['gold_usd_oz'])*math.exp(pred_ret)
+    return fair,pred_ret
 
 def append_history(payload: dict):
     HISTORY.parent.mkdir(parents=True,exist_ok=True)
-    compact={'generated_at_utc':payload['generated_at_utc'],'market':payload.get('market'),'model':payload.get('model'),'data_quality':payload['data_quality']}
+    compact={'generated_at_utc':payload['generated_at_utc'],'market':payload.get('market'),'fundamentals':payload.get('fundamentals'),'model':payload.get('model'),'data_quality':payload['data_quality']}
     with HISTORY.open('a',encoding='utf-8') as f: f.write(json.dumps(compact,ensure_ascii=False)+'\n')
 
 def main():
     now=datetime.now(timezone.utc); errors=[]
-    payload={'as_of_date':now.date().isoformat(),'generated_at_utc':now.isoformat(),'model_version':'gold-equilibrium-v1.1'}
+    payload={'as_of_date':now.date().isoformat(),'generated_at_utc':now.isoformat(),'model_version':'gold-equilibrium-v2'}
     try: payload['market']=mkt=spot()
     except Exception as e: errors.append(f'spot: {e}'); mkt=None
     macro={}
@@ -146,27 +149,43 @@ def main():
     except Exception as e: errors.append(f'WGC: {e}'); fund=None
     try: model=json.loads(MODEL_FILE.read_text(encoding='utf-8'))
     except Exception as e: errors.append(f'model file: {e}'); model=None
+
     if mkt and fund and model and all(s in macro for s in ('DFII10','DTWEXBGS','T10YIE','VIXCLS')):
-        macro_fair=macro_pstar(model,macro)
-        raw_pstar=macro_fair*fund['physical_multiplier']
-        lower,upper=0.55*mkt['usd_oz'],1.55*mkt['usd_oz']
-        guardrail_applied=raw_pstar<lower or raw_pstar>upper
-        pstar=max(lower,min(upper,raw_pstar))
-        macro_gate=model.get('macro_validation_gate')=='PASS'
-        physical_gate=fund.get('physical_status')=='VALID'
-        status='VALID' if macro_gate and physical_gate and not guardrail_applied else 'PROVISIONAL'
-        payload['model']={
-            'macro_fair_value_usd_oz':round(macro_fair,2),'physical_multiplier':round(fund['physical_multiplier'],6),
-            'raw_fundamental_p_star_usd_oz':round(raw_pstar,2),'fundamental_p_star_usd_oz':round(pstar,2),
-            'guardrail_applied':guardrail_applied,'market_vs_pstar_pct':round((mkt['usd_oz']/pstar-1)*100,2),
-            'status':status,'macro_gate':model.get('macro_validation_gate'),'physical_gate':fund.get('physical_status'),
-            'walk_forward_metrics':model.get('metrics'),
-            'governance':{'no_imputation':True,'publication_gate':'VALID_ONLY_IF_BOTH_GATES_PASS_AND_NO_GUARDRAIL'}
-        }
-        payload['model_status']=status
+        try:
+            macro_fair,pred_ret=macro_pstar(model,macro)
+            pstar=macro_fair*fund['physical_multiplier']
+            distance=abs(pstar/mkt['usd_oz']-1.0)*100.0
+            outlier_flag=distance>50.0
+            macro_gate=model.get('macro_validation_gate')=='PASS'
+            physical_gate=fund.get('physical_status')=='VALID'
+            status='VALID' if macro_gate and physical_gate and not outlier_flag else 'PROVISIONAL'
+            payload['model']={
+                'macro_predicted_return_pct':round(pred_ret*100.0,3),
+                'macro_fair_value_usd_oz':round(macro_fair,2),
+                'physical_multiplier':round(fund['physical_multiplier'],6),
+                'fundamental_p_star_usd_oz':round(pstar,2),
+                'market_vs_pstar_pct':round((mkt['usd_oz']/pstar-1.0)*100.0,2),
+                'distance_from_market_pct':round(distance,2),
+                'outlier_flag':outlier_flag,
+                'status':status,
+                'macro_gate':model.get('macro_validation_gate'),
+                'physical_gate':fund.get('physical_status'),
+                'walk_forward_metrics':model.get('metrics'),
+                'calibration_reference':model.get('reference'),
+                'governance':{
+                    'no_imputation':True,
+                    'no_market_price_clipping':True,
+                    'publication_gate':'VALID_ONLY_IF_BOTH_GATES_PASS_AND_NO_OUTLIER'
+                }
+            }
+            payload['model_status']=status
+        except Exception as e:
+            errors.append(f'model calculation: {e}')
+            payload['model']=None; payload['model_status']='UNAVAILABLE'
     else:
         payload['model']=None; payload['model_status']='UNAVAILABLE'
-    payload['errors']=errors; payload['data_quality']='OK' if not errors else 'DEGRADED'
+    payload['errors']=errors
+    payload['data_quality']='OK' if not errors else 'DEGRADED'
     OUT.parent.mkdir(parents=True,exist_ok=True)
     OUT.write_text(json.dumps(payload,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     append_history(payload)

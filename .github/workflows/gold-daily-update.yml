@@ -1,6 +1,12 @@
 name: Gold Equilibrium Daily Update
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "gold/**"
+      - ".github/workflows/gold-daily-update.yml"
   schedule:
     - cron: "20 21 * * *"
   workflow_dispatch:

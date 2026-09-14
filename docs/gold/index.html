@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gold Equilibrium Price</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<header>
+<div class="badge" id="badge">PROVISIONAL · GOVERNANCE GATE ACTIVE</div>
+<h1>Gold Equilibrium Price</h1>
+<p class="lead">السعر المتعادل الهيكلي للذهب مقابل سعر السوق، باستخدام طبقة سعر يومية، نموذج نقدي مُعاير تاريخيًا، وأساسيات العرض والطلب من World Gold Council.</p>
+<p class="muted" id="updated">جاري تحميل آخر تحديث…</p>
+</header>
+<section class="grid cards">
+<article class="card"><span>سعر السوق XAU/USD</span><strong class="gold" id="spot">—</strong><small id="spotMeta">—</small></article>
+<article class="card"><span>السعر المتعادل P*</span><strong class="green" id="pstar">—</strong><small id="pstarMeta">—</small></article>
+<article class="card"><span>السوق مقابل P*</span><strong id="gap">—</strong><small id="gapMeta">—</small></article>
+</section>
+<section class="panel"><h2>تفكيك السعر المتعادل</h2>
+<div class="row"><span>Macro fair value</span><b id="macroP">—</b></div>
+<div class="row"><span>Physical overlay multiplier</span><b id="physical">—</b></div>
+<div class="row"><span>Strategic demand share</span><b id="strategic">—</b></div>
+<div class="row"><span>Recycling share</span><b id="recycling">—</b></div>
+<div class="row"><span>Guardrail active</span><b id="guardrail">—</b></div>
+</section>
+<section class="panel"><h2>العوامل النقدية</h2>
+<div class="row"><span>10Y real yield</span><b id="ry">—</b></div>
+<div class="row"><span>Broad USD index</span><b id="usd">—</b></div>
+<div class="row"><span>10Y breakeven inflation</span><b id="be">—</b></div>
+<div class="row"><span>VIX</span><b id="vix">—</b></div>
+<div class="row"><span>CPI</span><b id="cpi">—</b></div>
+<div class="row"><span>M2</span><b id="m2">—</b></div>
+</section>
+<section class="panel"><h2>العرض والطلب — أحدث ربع</h2>
+<div class="row"><span>الفترة</span><b id="quarter">—</b></div>
+<div class="row"><span>Mine production</span><b id="mine">—</b></div>
+<div class="row"><span>Recycled gold</span><b id="rec">—</b></div>
+<div class="row"><span>Bar & coin</span><b id="barcoin">—</b></div>
+<div class="row"><span>ETFs</span><b id="etf">—</b></div>
+<div class="row"><span>Central banks</span><b id="cb">—</b></div>
+<div class="row"><span>OTC & other</span><b id="otc">—</b></div>
+</section>
+<section class="panel"><h2>اختبارات النموذج</h2>
+<div class="row"><span>Walk-forward gate</span><b id="wf">—</b></div>
+<div class="row"><span>Out-of-sample months</span><b id="oos">—</b></div>
+<div class="row"><span>Walk-forward R²</span><b id="r2">—</b></div>
+<div class="row"><span>Walk-forward MAPE</span><b id="mape">—</b></div>
+<div class="row"><span>Walk-forward RMSE</span><b id="rmse">—</b></div>
+<div class="row"><span>Fundamentals calibration</span><b class="yellow">PENDING</b></div>
+</section>
+<section class="panel"><h2>حوكمة النشر</h2>
+<p class="note">لا يتم استخدام Total Demand / Total Supply كنسبة توازن مباشرة لأنهما يتطابقان محاسبيًا تقريبًا في بيانات الذهب. النموذج يفصل القيمة النقدية المُعايرة عن ضغط الطلب الاستراتيجي والعرض. لا يتم تعويض البيانات الحرجة المفقودة، ولا يتحول النموذج إلى VALID قبل نجاح الاختبارات التاريخية لطبقة الأساسيات.</p>
+<div class="row"><span>Model status</span><b id="status">—</b></div>
+<div class="row"><span>Data quality</span><b id="quality">—</b></div>
+<div class="row"><span>No-imputation</span><b class="green">ACTIVE</b></div>
+</section>
+<section class="panel"><h2>المصادر</h2><p class="sources">World Gold Council · World Bank Pink Sheet / datasets/gold-prices · FRED · XAUS / Gold API fallback</p></section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

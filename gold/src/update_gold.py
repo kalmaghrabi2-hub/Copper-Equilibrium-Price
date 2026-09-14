@@ -4,14 +4,13 @@ import html,json,math,re,urllib.parse,urllib.request
 from datetime import datetime,timezone
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'docs/gold/data/latest.json';CAL=ROOT/'docs/gold/data/weekly_calibration.json'
-UA='Mozilla/5.0 GoldEquilibriumPrice/1.3';MACRO_SERIES=['DX-Y.NYB','^TNX','^VIX','TIP']
+UA='Mozilla/5.0 GoldEquilibriumPrice/2.0';MACRO_SERIES=['DX-Y.NYB','^TNX','^VIX','TIP']
 def get_text(url,timeout=45):
  r=urllib.request.Request(url,headers={'User-Agent':UA,'Accept':'*/*'})
  with urllib.request.urlopen(r,timeout=timeout) as x:return x.read().decode('utf-8',errors='replace')
 def get_json(u):return json.loads(get_text(u))
 def yahoo_quote(s):
- q=urllib.parse.quote(s,safe='');now=int(datetime.now(timezone.utc).timestamp());start=now-21*86400;u=f'https://query1.finance.yahoo.com/v8/finance/chart/{q}?period1={start}&period2={now}&interval=1d&events=history'
- j=get_json(u);res=((j.get('chart') or {}).get('result') or [None])[0]
+ q=urllib.parse.quote(s,safe='');now=int(datetime.now(timezone.utc).timestamp());start=now-21*86400;u=f'https://query1.finance.yahoo.com/v8/finance/chart/{q}?period1={start}&period2={now}&interval=1d&events=history';j=get_json(u);res=((j.get('chart') or {}).get('result') or [None])[0]
  if not res:raise RuntimeError('Yahoo empty '+s)
  ts=res.get('timestamp') or [];cl=(((res.get('indicators') or {}).get('quote') or [{}])[0].get('close') or [])
  for t,v in reversed(list(zip(ts,cl))):
@@ -59,19 +58,20 @@ def fetch_wgc(now):
 def load_cal():
  try:return json.loads(CAL.read_text())
  except:return None
-def macro_value(m,cal):
+def fair_value(m,cal,gold_anchor):
  if not cal:return None
  s=cal.get('series') or [];b=cal.get('beta') or [];mu=cal.get('means') or [];sd=cal.get('sds') or []
  if len(b)!=len(s)+1:return None
  vals=[]
  for k in s:
-  if k not in m:return None
-  vals.append(m[k]['value'])
+  if k=='LAG_GOLD_LOG':vals.append(math.log(gold_anchor))
+  elif k in m:vals.append(m[k]['value'])
+  else:return None
  x=[1.0]+[(v-a)/z for v,a,z in zip(vals,mu,sd)];return math.exp(sum(a*z for a,z in zip(x,b)))
 def overlay(w):
  strategic=w['bar_coin_t']+w['etf_t']+w['central_banks_t']+w['otc_other_t'];share=strategic/max(w['total_supply_t'],1);recycle=w['recycled_gold_t']/max(w['total_supply_t'],1);raw=math.exp(.35*(share-.50)-.20*(recycle-.27));mult=min(max(raw,.88),1.12);return {'strategic_demand_share':share,'recycling_share':recycle,'multiplier':mult,'status':'UNCALIBRATED_OVERLAY'}
 def main():
- now=datetime.now(timezone.utc);err=[];p={'as_of_date':now.date().isoformat(),'generated_at_utc':now.isoformat(),'model_version':'gold-weekly-hybrid-v1.3'}
+ now=datetime.now(timezone.utc);err=[];p={'as_of_date':now.date().isoformat(),'generated_at_utc':now.isoformat(),'model_version':'gold-weekly-arx-hybrid-v2.0'}
  try:spot=fetch_spot();p['market']=spot
  except Exception as e:err.append('spot: '+str(e));spot=None
  macro={}
@@ -81,9 +81,9 @@ def main():
  p['macro']=macro
  try:w=fetch_wgc(now);p['fundamentals']=w
  except Exception as e:err.append('WGC: '+str(e));w=None
- cal=load_cal();p['calibration']=cal;mp=macro_value(macro,cal)
+ cal=load_cal();p['calibration']=cal;mp=fair_value(macro,cal,spot['usd_oz']) if spot else None
  if spot and w and mp:
-  ph=overlay(w);raw=mp*ph['multiplier'];lo,hi=.55*spot['usd_oz'],1.55*spot['usd_oz'];ps=min(max(raw,lo),hi);gate=(cal or {}).get('walk_forward_gate');p['model']={'macro_fair_value_usd_oz':round(mp,2),'physical_overlay':{k:(round(v,6) if isinstance(v,float) else v) for k,v in ph.items()},'fundamental_p_star_usd_oz':round(ps,2),'raw_combined_p_star_usd_oz':round(raw,2),'market_vs_pstar_pct':round((spot['usd_oz']/ps-1)*100,2),'guardrail_active':ps!=raw,'status':'PROVISIONAL','confidence':'LOW' if gate!='PASS' else 'MEDIUM','governance':{'weekly_walk_forward':gate or 'PENDING','fundamentals_historical_calibration':'PENDING','no_imputation':True,'publication_gate':'PROVISIONAL_ONLY'}};p['model_status']='PROVISIONAL'
+  ph=overlay(w);raw=mp*ph['multiplier'];lo,hi=.55*spot['usd_oz'],1.55*spot['usd_oz'];ps=min(max(raw,lo),hi);gate=(cal or {}).get('walk_forward_gate');p['model']={'weekly_fair_value_usd_oz':round(mp,2),'macro_fair_value_usd_oz':round(mp,2),'physical_overlay':{k:(round(v,6) if isinstance(v,float) else v) for k,v in ph.items()},'fundamental_p_star_usd_oz':round(ps,2),'raw_combined_p_star_usd_oz':round(raw,2),'market_vs_pstar_pct':round((spot['usd_oz']/ps-1)*100,2),'guardrail_active':ps!=raw,'status':'PROVISIONAL','confidence':'MEDIUM' if gate=='PASS' else 'LOW','governance':{'weekly_walk_forward':gate or 'PENDING','fundamentals_historical_calibration':'PENDING','no_imputation':True,'publication_gate':'PROVISIONAL_ONLY'}};p['model_status']='PROVISIONAL'
  else:p['model']=None;p['model_status']='UNAVAILABLE'
  p['errors']=err;p['data_quality']='OK' if not err else 'DEGRADED';OUT.parent.mkdir(parents=True,exist_ok=True);OUT.write_text(json.dumps(p,ensure_ascii=False,indent=2)+'\n');print(json.dumps(p,ensure_ascii=False,indent=2))
 if __name__=='__main__':main()

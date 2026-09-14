@@ -45,6 +45,8 @@ jobs:
         run: python copper/src/update_copper.py
       - name: Enforce strict publication gate
         run: python copper/src/apply_publication_gate.py
+      - name: Assert economic committee publication contract
+        run: python copper/src/assert_publication_contract.py
       - name: Commit refreshed outputs
         run: |
           git config user.name "copper-equilibrium-bot"

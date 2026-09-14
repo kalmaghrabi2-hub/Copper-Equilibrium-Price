@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import json,math,re,urllib.parse,urllib.request
+import html,json,math,re,urllib.parse,urllib.request
 from datetime import datetime,timezone
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'docs/gold/data/latest.json';CAL=ROOT/'docs/gold/data/weekly_calibration.json'
-UA='Mozilla/5.0 GoldEquilibriumPrice/1.2';MACRO_SERIES=['DX-Y.NYB','^TNX','^VIX','TIP']
+UA='Mozilla/5.0 GoldEquilibriumPrice/1.3';MACRO_SERIES=['DX-Y.NYB','^TNX','^VIX','TIP']
 def get_text(url,timeout=45):
  r=urllib.request.Request(url,headers={'User-Agent':UA,'Accept':'*/*'})
  with urllib.request.urlopen(r,timeout=timeout) as x:return x.read().decode('utf-8',errors='replace')
@@ -38,12 +38,13 @@ def urls(now):
   if q==0:q,y=4,y-1
  return o
 def parse_wgc(h,u):
- t=re.sub(r'<[^>]+>',' ',h);t=re.sub(r'\s+',' ',t)
- def val(label):
-  p=re.escape(label)+r"\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)";m=re.search(p,t,re.I)
-  if not m:raise RuntimeError('missing WGC '+label)
-  return float(m.group(5).replace(',',''))
- d={'mine_production_t':val('Mine Production'),'producer_hedging_t':val('Net Producer Hedging'),'recycled_gold_t':val('Recycled Gold'),'total_supply_t':val('Total Supply'),'jewellery_fabrication_t':val('Jewellery Fabrication'),'technology_t':val('Technology'),'investment_t':val('Investment'),'bar_coin_t':val('Total Bar and Coin'),'etf_t':val('ETFs & Similar Products'),'central_banks_t':val('Central Banks & Other inst.'),'gold_demand_ex_otc_t':val('Gold Demand'),'otc_other_t':val('OTC and Other'),'total_demand_t':val('Total Demand'),'quarter_avg_lbma_usd_oz':val('LBMA Gold Price (US$/oz)'),'source':u};m=re.search(r'Gold Demand Trends:\s*Q([1-4])\s*(\d{4})',t,re.I)
+ t=html.unescape(h);t=re.sub(r'<[^>]+>',' ',t);t=t.replace('\u00a0',' ');t=re.sub(r'\s+',' ',t)
+ def val(*labels):
+  for label in labels:
+   p=re.escape(label)+r"\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)";m=re.search(p,t,re.I)
+   if m:return float(m.group(5).replace(',',''))
+  raise RuntimeError('missing WGC '+labels[0])
+ d={'mine_production_t':val('Mine Production'),'producer_hedging_t':val('Net Producer Hedging'),'recycled_gold_t':val('Recycled Gold'),'total_supply_t':val('Total Supply'),'jewellery_fabrication_t':val('Jewellery Fabrication'),'technology_t':val('Technology'),'investment_t':val('Investment'),'bar_coin_t':val('Total Bar and Coin','Bar and Coin'),'etf_t':val('ETFs & Similar Products','Gold ETFs','ETFs'),'central_banks_t':val('Central Banks & Other inst.','Central Banks'),'gold_demand_ex_otc_t':val('Gold Demand'),'otc_other_t':val('OTC and Other'),'total_demand_t':val('Total Demand'),'quarter_avg_lbma_usd_oz':val('LBMA Gold Price (US$/oz)','LBMA (PM) Gold Price (US$/oz)'),'source':u};m=re.search(r'Gold Demand Trends:\s*Q([1-4])\s*(\d{4})',t,re.I)
  if m:d['quarter']=f'{m.group(2)}-Q{m.group(1)}'
  return d
 def fetch_wgc(now):
@@ -51,7 +52,7 @@ def fetch_wgc(now):
  for u in urls(now):
   try:
    h=get_text(u)
-   if 'Total Supply' not in h:raise RuntimeError('table absent')
+   if 'Total Supply' not in html.unescape(h):raise RuntimeError('table absent')
    return parse_wgc(h,u)
   except Exception as e:errs.append(str(e))
  raise RuntimeError('WGC unavailable: '+' | '.join(errs))
@@ -70,7 +71,7 @@ def macro_value(m,cal):
 def overlay(w):
  strategic=w['bar_coin_t']+w['etf_t']+w['central_banks_t']+w['otc_other_t'];share=strategic/max(w['total_supply_t'],1);recycle=w['recycled_gold_t']/max(w['total_supply_t'],1);raw=math.exp(.35*(share-.50)-.20*(recycle-.27));mult=min(max(raw,.88),1.12);return {'strategic_demand_share':share,'recycling_share':recycle,'multiplier':mult,'status':'UNCALIBRATED_OVERLAY'}
 def main():
- now=datetime.now(timezone.utc);err=[];p={'as_of_date':now.date().isoformat(),'generated_at_utc':now.isoformat(),'model_version':'gold-weekly-hybrid-v1.2'}
+ now=datetime.now(timezone.utc);err=[];p={'as_of_date':now.date().isoformat(),'generated_at_utc':now.isoformat(),'model_version':'gold-weekly-hybrid-v1.3'}
  try:spot=fetch_spot();p['market']=spot
  except Exception as e:err.append('spot: '+str(e));spot=None
  macro={}
@@ -82,7 +83,7 @@ def main():
  except Exception as e:err.append('WGC: '+str(e));w=None
  cal=load_cal();p['calibration']=cal;mp=macro_value(macro,cal)
  if spot and w and mp:
-  ph=overlay(w);raw=mp*ph['multiplier'];lo,hi=.55*spot['usd_oz'],1.55*spot['usd_oz'];ps=min(max(raw,lo),hi);gate=(cal or {}).get('walk_forward_gate');p['model']={'macro_fair_value_usd_oz':round(mp,2),'physical_overlay':{k:(round(v,6) if isinstance(v,float) else v) for k,v in ph.items()},'fundamental_p_star_usd_oz':round(ps,2),'raw_combined_p_star_usd_oz':round(raw,2),'market_vs_pstar_pct':round((spot['usd_oz']/ps-1)*100,2),'guardrail_active':ps!=raw,'status':'PROVISIONAL','confidence':'MEDIUM' if gate=='PASS' else 'LOW','governance':{'weekly_walk_forward':gate or 'PENDING','fundamentals_historical_calibration':'PENDING','no_imputation':True,'publication_gate':'PROVISIONAL_ONLY'}};p['model_status']='PROVISIONAL'
+  ph=overlay(w);raw=mp*ph['multiplier'];lo,hi=.55*spot['usd_oz'],1.55*spot['usd_oz'];ps=min(max(raw,lo),hi);gate=(cal or {}).get('walk_forward_gate');p['model']={'macro_fair_value_usd_oz':round(mp,2),'physical_overlay':{k:(round(v,6) if isinstance(v,float) else v) for k,v in ph.items()},'fundamental_p_star_usd_oz':round(ps,2),'raw_combined_p_star_usd_oz':round(raw,2),'market_vs_pstar_pct':round((spot['usd_oz']/ps-1)*100,2),'guardrail_active':ps!=raw,'status':'PROVISIONAL','confidence':'LOW' if gate!='PASS' else 'MEDIUM','governance':{'weekly_walk_forward':gate or 'PENDING','fundamentals_historical_calibration':'PENDING','no_imputation':True,'publication_gate':'PROVISIONAL_ONLY'}};p['model_status']='PROVISIONAL'
  else:p['model']=None;p['model_status']='UNAVAILABLE'
  p['errors']=err;p['data_quality']='OK' if not err else 'DEGRADED';OUT.parent.mkdir(parents=True,exist_ok=True);OUT.write_text(json.dumps(p,ensure_ascii=False,indent=2)+'\n');print(json.dumps(p,ensure_ascii=False,indent=2))
 if __name__=='__main__':main()

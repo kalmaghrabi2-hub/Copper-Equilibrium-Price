@@ -36,6 +36,15 @@ jobs:
       - name: Compile sources
         run: python -m compileall -q copper/src
 
+      - name: Calibrate benchmark-aware weekly market model
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            python copper/src/calibrate_copper_weekly.py && break
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            sleep 15
+          done
+
       - name: Update latest copper equilibrium data
         shell: bash
         run: |
@@ -49,10 +58,11 @@ jobs:
         run: |
           git config user.name "copper-equilibrium-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add docs/copper/data/latest.json docs/index.html
+          git add docs/copper/data/weekly_calibration.json docs/copper/data/latest.json docs/index.html
           if git diff --cached --quiet; then
             echo "No output changes"
           else
-            git commit -m "chore(copper): daily equilibrium refresh"
-            git push origin HEAD:main
+            git commit -m "chore(copper): daily benchmark-aware equilibrium refresh"
+            git pull --rebase origin main
+            git push origin main
           fi

@@ -3,13 +3,14 @@ from __future__ import annotations
 import csv, io, json, math, re
 from datetime import datetime, timezone
 from pathlib import Path
+import pandas as pd
 import requests
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'docs' / 'gold' / 'data' / 'latest.json'
 HISTORY = ROOT / 'docs' / 'gold' / 'data' / 'history.jsonl'
 MODEL_FILE = ROOT / 'gold' / 'model' / 'model.json'
-UA = 'GoldEquilibriumPrice/1.0 (+https://github.com/kalmaghrabi2-hub/copper-equilibrium-price)'
+UA = 'GoldEquilibriumPrice/1.1 (+https://github.com/kalmaghrabi2-hub/copper-equilibrium-price)'
 
 def text(url: str, timeout=35) -> str:
     r = requests.get(url, headers={'User-Agent': UA, 'Accept': '*/*'}, timeout=timeout)
@@ -42,6 +43,30 @@ def spot() -> dict:
         except Exception as e: errors.append(f'{provider}: {e}')
     raise RuntimeError(' | '.join(errors))
 
+def _num(v):
+    if pd.isna(v): return None
+    if isinstance(v,(int,float)): return float(v)
+    s=str(v).replace(',','').strip().replace('−','-')
+    if s in ('','-','—','–'): return None
+    m=re.search(r'-?\d+(?:\.\d+)?',s)
+    return float(m.group()) if m else None
+
+def _row_values(table: pd.DataFrame, labels) -> list[float]:
+    first=table.iloc[:,0].astype(str).str.replace(r'\s+',' ',regex=True).str.strip().str.lower()
+    idx=None
+    for label in labels:
+        hits=first[first.str.contains(label.lower(),regex=False)]
+        if len(hits): idx=hits.index[0]; break
+    if idx is None: raise ValueError('/'.join(labels))
+    vals=[]
+    for v in table.loc[idx].iloc[1:]:
+        n=_num(v)
+        if n is not None:
+            vals.append(n)
+        if len(vals)==5: break
+    if len(vals)<5: raise ValueError(f'not enough quarterly values for {labels}: {vals}')
+    return vals
+
 def wgc_latest() -> dict:
     now=datetime.now(timezone.utc); q=(now.month-1)//3+1; cq=q-1; cy=now.year
     if cq==0: cq,cy=4,cy-1
@@ -50,19 +75,23 @@ def wgc_latest() -> dict:
         url=f'https://www.gold.org/goldhub/research/gold-demand-trends/gold-demand-trends-q{cq}-{cy}'
         try:
             html=text(url)
-            plain=re.sub(r'<[^>]+>',' ',html); plain=re.sub(r'\s+',' ',plain)
-            def vals(label):
-                m=re.search(re.escape(label)+r"\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)",plain,re.I)
-                if not m: raise ValueError(label)
-                return [float(x.replace(',','')) for x in m.groups()]
-            mine=vals('Mine Production'); recycled=vals('Recycled Gold'); hedging=vals('Net Producer Hedging')
-            tech=vals('Technology'); bar=vals('Total Bar and Coin')
-            try: etf=vals('ETFs & Similar Products')
-            except Exception: etf=vals('ETFs & similar products')
-            try: cb=vals('Central Banks & Other inst.')
-            except Exception: cb=vals('Central banks & other inst.')
-            price=vals('LBMA Gold Price (US$/oz)')
-            supply=vals('Total Supply')
+            tables=pd.read_html(io.StringIO(html))
+            target=None
+            for t in tables:
+                if t.shape[1] < 6: continue
+                first=t.iloc[:,0].astype(str).str.lower()
+                if first.str.contains('mine production',regex=False).any() and first.str.contains('total supply',regex=False).any():
+                    target=t; break
+            if target is None: raise ValueError('supply-demand table not found')
+            mine=_row_values(target,['mine production'])
+            recycled=_row_values(target,['recycled gold'])
+            hedging=_row_values(target,['net producer hedging'])
+            tech=_row_values(target,['technology'])
+            bar=_row_values(target,['total bar and coin','bar and coin'])
+            etf=_row_values(target,['etfs & similar products','etfs & similar','gold etfs'])
+            cb=_row_values(target,['central banks & other inst.','central banks & other','central banks'])
+            price=_row_values(target,['lbma gold price'])
+            supply=_row_values(target,['total supply'])
             pressure=[]
             for i in range(5):
                 strategic=0.45*cb[i]+0.35*bar[i]+0.15*etf[i]+0.05*tech[i]
@@ -105,7 +134,7 @@ def append_history(payload: dict):
 
 def main():
     now=datetime.now(timezone.utc); errors=[]
-    payload={'as_of_date':now.date().isoformat(),'generated_at_utc':now.isoformat(),'model_version':'gold-equilibrium-v1'}
+    payload={'as_of_date':now.date().isoformat(),'generated_at_utc':now.isoformat(),'model_version':'gold-equilibrium-v1.1'}
     try: payload['market']=mkt=spot()
     except Exception as e: errors.append(f'spot: {e}'); mkt=None
     macro={}

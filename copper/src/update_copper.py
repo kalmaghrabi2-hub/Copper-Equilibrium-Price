@@ -5,7 +5,7 @@ import html
 import json
 import re
 import urllib.request
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -15,6 +15,18 @@ OUTPUT = ROOT / "docs/copper/data/latest.json"
 CAL = ROOT / "docs/copper/data/weekly_calibration.json"
 INDEX = ROOT / "docs/index.html"
 STRUCTURAL_PSTAR = 10469.088447
+MARKET_CLOSE_CUTOFF_UTC = time(18, 0)
+
+V15_GOVERNANCE = {
+    "market_months_continuous": 80,
+    "exact_public_icsg_months": 35,
+    "longest_consecutive_icsg_months": 11,
+    "minimum_consecutive_required": 36,
+    "no_imputation": True,
+    "publication_lag_control": True,
+    "monthly_fundamental_walk_forward": "BLOCKED",
+    "final_calibrated_daily_pstar": "BLOCKED",
+}
 
 
 class TableParser(HTMLParser):
@@ -53,7 +65,7 @@ def fetch_text(url: str) -> str:
     req = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Mozilla/5.0 Copper-Equilibrium-Price/2.0",
+            "User-Agent": "Mozilla/5.0 Copper-Equilibrium-Price/2.1",
             "Accept": "text/html,application/xhtml+xml",
         },
     )
@@ -63,6 +75,24 @@ def fetch_text(url: str) -> str:
 
 def num(value: str) -> float:
     return float(value.replace(",", "").strip())
+
+
+def previous_weekday(day: date) -> date:
+    day -= timedelta(days=1)
+    while day.weekday() >= 5:
+        day -= timedelta(days=1)
+    return day
+
+
+def expected_latest_completed_day(now_utc: datetime) -> date:
+    today = now_utc.date()
+    if today.weekday() >= 5:
+        while today.weekday() >= 5:
+            today -= timedelta(days=1)
+        return today
+    if now_utc.time() >= MARKET_CLOSE_CUTOFF_UTC:
+        return today
+    return previous_weekday(today)
 
 
 def parse_latest(html_text: str) -> dict:
@@ -120,22 +150,23 @@ def update_index(data: dict) -> None:
     text = INDEX.read_text(encoding="utf-8")
     market = data["market"]
     model = data["model"]
+    structural = data["structural_model"]
     metrics = ((data.get("calibration") or {}).get("metrics") or {})
-    gap = float(model["market_vs_pstar_pct"])
+    structural_gap = float(structural["market_vs_structural_pstar_pct"])
     status = data.get("data_status", "UNKNOWN")
 
     replacements = [
         (
             r'(<span class="muted">LME Cash — public validation proxy</span><strong class="copper">).*?(</strong><small>).*?(</small>)',
-            rf'\g<1>{fmt_price(market["lme_cash_usd_t"])}\g<2>آخر جلسة موثقة داخل المحرك: {data["as_of"]} · {status}\g<3>',
+            rf'\g<1>{fmt_price(market["lme_cash_usd_t"])}\g<2>آخر مجموعة كاملة موثقة: {data["as_of"]} · {status}\g<3>',
         ),
         (
-            r'(<span class="muted">Calibrated market P\*</span><strong class="green">).*?(</strong><small>).*?(</small>)',
-            rf'\g<1>{fmt_price(model["calibrated_p_star_usd_t"], 0)}\g<2>{model["status"]} · 1-week benchmark-aware layer\g<3>',
+            r'(<span class="muted">(?:Calibrated market P\*|Structural P\*)</span><strong class="green">).*?(</strong><small>).*?(</small>)',
+            rf'\g<1>{fmt_price(structural["p_star_usd_t"], 0)}\g<2>Structural P* · PROVISIONAL · monthly walk-forward BLOCKED\g<3>',
         ),
         (
             r'(<span class="muted">Market vs P\*</span><strong class="red">).*?(</strong><small>).*?(</small>)',
-            rf'\g<1>{gap:+.1f}%\g<2>{"السوق أعلى من السعر المتعادل" if gap >= 0 else "السوق أدنى من السعر المتعادل"}\g<3>',
+            rf'\g<1>{structural_gap:+.1f}%\g<2>{"السوق أعلى من Structural P*" if structural_gap >= 0 else "السوق أدنى من Structural P*"}\g<3>',
         ),
         (r'(<div class="row"><span>LME 3M</span><b>).*?(</b></div>)', rf'\g<1>{fmt_price(market["lme_3m_usd_t"], 0)}\g<2>'),
         (r'(<div class="row"><span>LME Stocks</span><b>).*?(</b></div>)', rf'\g<1>{int(market["lme_stock_t"]):,} t\g<2>'),
@@ -157,10 +188,22 @@ def update_index(data: dict) -> None:
 
 def main() -> None:
     previous = load_json(OUTPUT)
+    now_utc = datetime.now(timezone.utc).replace(microsecond=0)
+    stale_reason = None
+
     try:
         market = parse_latest(fetch_text(WESTMETALL_URL))
-        data_status = "FRESH_PUBLIC_PROXY"
-        stale_reason = None
+        expected_day = expected_latest_completed_day(now_utc)
+        observed_day = date.fromisoformat(market["as_of"])
+        if observed_day < expected_day:
+            data_status = "STALE_LAST_VERIFIED"
+            stale_reason = (
+                f"Configured public validation source latest complete row is {observed_day.isoformat()}, "
+                f"while the latest expected completed weekday is {expected_day.isoformat()}; "
+                "missing required full Cash/3M/Stocks set was not fabricated."
+            )
+        else:
+            data_status = "FRESH_PUBLIC_PROXY"
     except Exception as exc:
         if previous is None or not previous.get("market"):
             raise
@@ -170,31 +213,31 @@ def main() -> None:
 
     calibration = load_json(CAL)
     live = (calibration or {}).get("live") or {}
-    calibrated = live.get("fair_value_usd_t")
-    if calibrated is None:
-        calibrated = STRUCTURAL_PSTAR
-    calibrated = float(calibrated)
-
+    calibrated = float(live.get("fair_value_usd_t") or STRUCTURAL_PSTAR)
     weekly_gate = (calibration or {}).get("walk_forward_gate") or "PENDING"
     benchmark_gate = (calibration or {}).get("benchmark_gate") or "PENDING"
-    valid_market_layer = weekly_gate == "PASS" and benchmark_gate == "PASS"
-    model_status = "VALID" if valid_market_layer else "PROVISIONAL"
-    gap = market["lme_cash_usd_t"] / calibrated - 1.0
     metrics = (calibration or {}).get("metrics") or {}
+
+    # Weekly market-reference layer remains reference-only unless all its hard gates pass.
+    valid_market_layer = weekly_gate == "PASS" and benchmark_gate == "PASS"
+    weekly_status = "VALID" if valid_market_layer else "PROVISIONAL"
+    calibrated_gap = market["lme_cash_usd_t"] / calibrated - 1.0
+    structural_gap = market["lme_cash_usd_t"] / STRUCTURAL_PSTAR - 1.0
 
     data = {
         "as_of": market["as_of"],
-        "generated_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
-        "engine_version": "copper-benchmark-aware-2.0",
+        "generated_at_utc": now_utc.isoformat(),
+        "engine_version": "copper-benchmark-aware-2.1",
         "data_status": data_status,
         "market": market,
         "calibration": calibration,
         "model": {
             "calibrated_p_star_usd_t": round(calibrated, 2),
             "calibrated_p_star_usd_lb": round(calibrated / 2204.62262185, 6),
-            "market_vs_pstar_pct": round(gap * 100.0, 6),
-            "status": model_status,
-            "confidence": "HIGH" if valid_market_layer else "LOW",
+            "market_vs_pstar_pct": round(calibrated_gap * 100.0, 6),
+            "status": "PROVISIONAL",
+            "confidence": "LOW",
+            "publication_role": "REFERENCE_ONLY",
             "accuracy": {
                 "oos_accuracy_pct": metrics.get("accuracy_pct"),
                 "mape_pct": metrics.get("mape_pct"),
@@ -206,27 +249,28 @@ def main() -> None:
             "governance": {
                 "weekly_walk_forward": weekly_gate,
                 "benchmark_gate": benchmark_gate,
+                "publication_gate": "REFERENCE_ONLY" if not valid_market_layer else "VALID_MARKET_REFERENCE_ONLY",
+                "equilibrium_claim": "WITHHELD_NOT_VALIDATED",
                 "no_imputation": True,
-                "publication_gate": "VALID" if valid_market_layer else "PROVISIONAL_ONLY",
             },
         },
         "structural_model": {
             "p_star_usd_t": STRUCTURAL_PSTAR,
             "p_star_usd_lb": round(STRUCTURAL_PSTAR / 2204.62262185, 6),
-            "market_vs_structural_pstar_pct": round((market["lme_cash_usd_t"] / STRUCTURAL_PSTAR - 1.0) * 100.0, 6),
+            "market_vs_structural_pstar_pct": round(structural_gap * 100.0, 6),
             "residual_structural_gap_mt": 2.711236079,
             "optimistic_usd_t": 8599.16355,
             "stress_lower_bound_usd_t": 24500.0,
-            "status": "DIAGNOSTIC_ONLY_UNTIL_MONTHLY_FUNDAMENTALS_GATE_PASSES",
+            "status": "PROVISIONAL_DIAGNOSTIC_ONLY",
             "weight_in_calibrated_pstar": 0.0,
         },
         "governance": {
-            "model_status": model_status,
+            "model_status": "PROVISIONAL",
             "structural_fundamental_status": "PROVISIONAL",
             "failed_or_unvalidated_layers_have_zero_price_weight": True,
-            "no_imputation": True,
-            "publication_lag_control": True,
+            **V15_GOVERNANCE,
         },
+        "model_status": "PROVISIONAL",
     }
     if stale_reason:
         data["stale_reason"] = stale_reason
@@ -234,7 +278,13 @@ def main() -> None:
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     update_index(data)
-    print(json.dumps({"ok": True, "as_of": data.get("as_of"), "status": data_status, "model_status": model_status}, ensure_ascii=False))
+    print(json.dumps({
+        "ok": True,
+        "as_of": data.get("as_of"),
+        "data_status": data_status,
+        "model_status": "PROVISIONAL",
+        "market_vs_structural_pstar_pct": data["structural_model"]["market_vs_structural_pstar_pct"],
+    }, ensure_ascii=False))
 
 
 if __name__ == "__main__":

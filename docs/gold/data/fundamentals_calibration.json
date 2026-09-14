@@ -1,0 +1,65 @@
+{
+  "generated_at_utc": "2026-09-14T10:59:41.423434+00:00",
+  "model": "wgc-quarterly-physical-overlay-ridge-v1",
+  "frequency": "quarterly",
+  "feature_period": "quarter q fundamentals",
+  "target": "average COMEX GC=F price in q+1 versus q",
+  "features": [
+    "strategic_demand_share",
+    "recycling_share",
+    "producer_hedging_share"
+  ],
+  "beta": [
+    0.025178460745674668,
+    0.026961108053445534,
+    -0.00431873016721974,
+    0.010519179463163683
+  ],
+  "means": [
+    0.4279016214362164,
+    0.26373812644906863,
+    -0.008304423510038586
+  ],
+  "sds": [
+    0.11897470209381032,
+    0.019013833584591012,
+    0.010230882658342787
+  ],
+  "ridge_lambda": 1.5,
+  "metrics": {
+    "wgc_quarters_exact": 29,
+    "walk_forward_n": 17,
+    "walk_forward_start_feature_period": "2021-Q1",
+    "walk_forward_end_feature_period": "2026-Q2",
+    "price_r2": 0.9233,
+    "price_mape_pct": 5.727,
+    "naive_mape_pct": 5.566,
+    "rmse_usd_oz": 263.99,
+    "skill_vs_naive_mse_pct": -17.68,
+    "direction_accuracy_pct": 64.71
+  },
+  "walk_forward_gate": "FAIL",
+  "publication_status": "PROVISIONAL",
+  "coverage": {
+    "first": "2017-Q1",
+    "last": "2026-Q2",
+    "period_count": 29,
+    "q4_policy": "excluded when quarterly table is ambiguous in full-year reports",
+    "failed_period_count": 0,
+    "failed_periods": []
+  },
+  "sources": {
+    "fundamentals": "World Gold Council public Gold Demand Trends quarterly report section tables",
+    "gold_price": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=1451606400&period2=1789469981&interval=1wk&events=history&includeAdjustedClose=true"
+  },
+  "rules": {
+    "publication_lag": "features from q predict q+1; no same-quarter WGC look-ahead",
+    "missing_data": "exact observations only; no interpolation or imputation",
+    "min_training_quarters": 12,
+    "min_oos_quarters": 12,
+    "max_price_mape_pct": 12.0,
+    "min_direction_accuracy_pct": 45.0,
+    "min_skill_vs_naive_mse_pct": -10.0,
+    "copyright": "historical WGC row-level data are not republished; only model coefficients, metrics and coverage metadata are stored"
+  }
+}

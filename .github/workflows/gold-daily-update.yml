@@ -29,7 +29,7 @@ jobs:
         run: python -m compileall -q gold/src
 
       - name: Calibrate historical macro model
-        run: python gold/src/calibrate_gold.py
+        run: python gold/src/calibrate_gold_fast.py
 
       - name: Update latest gold equilibrium data
         run: python gold/src/update_gold.py

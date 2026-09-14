@@ -1,11 +1,11 @@
 {
   "as_of_date": "2026-09-14",
-  "generated_at_utc": "2026-09-14T09:09:13.730145+00:00",
-  "model_version": "gold-equilibrium-v1",
+  "generated_at_utc": "2026-09-14T09:09:51.128886+00:00",
+  "model_version": "gold-equilibrium-v1.1",
   "market": {
-    "usd_oz": 4309.799805,
+    "usd_oz": 4310.399902,
     "provider": "XAUS",
-    "as_of": "2026-09-14T09:09:04.334Z",
+    "as_of": "2026-09-14T09:09:34.884Z",
     "freshness_status": "fresh",
     "source": "https://xaus.com/api/v1/spot?compact=1"
   },
@@ -35,10 +35,51 @@
       "source": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=VIXCLS"
     }
   },
-  "model": null,
-  "model_status": "UNAVAILABLE",
-  "errors": [
-    "WGC: https://www.gold.org/goldhub/research/gold-demand-trends/gold-demand-trends-q1-2025: ETFs & similar products"
-  ],
-  "data_quality": "DEGRADED"
+  "fundamentals": {
+    "quarter": "2026-Q2",
+    "source": "https://www.gold.org/goldhub/research/gold-demand-trends/gold-demand-trends-q2-2026",
+    "mine_production_t": 965.6,
+    "producer_hedging_t": -22.8,
+    "recycled_gold_t": 326.1,
+    "total_supply_t": 1268.9,
+    "technology_t": 80.4,
+    "bar_coin_t": 307.1,
+    "etf_t": -44.8,
+    "central_banks_t": 288.9,
+    "quarter_avg_lbma_usd_oz": 4506.3,
+    "pressure_last5": [
+      0.17350622733722212,
+      0.1858419670217423,
+      0.205663564029425,
+      0.16420191540303275,
+      0.18503428166128144
+    ],
+    "pressure_median5": 0.18503428166128144,
+    "pressure_current": 0.18503428166128144,
+    "physical_multiplier": 1.0,
+    "physical_status": "PROVISIONAL_5Q_NORMALIZATION"
+  },
+  "model": {
+    "macro_fair_value_usd_oz": 2050.22,
+    "physical_multiplier": 1.0,
+    "raw_fundamental_p_star_usd_oz": 2050.22,
+    "fundamental_p_star_usd_oz": 2370.72,
+    "guardrail_applied": true,
+    "market_vs_pstar_pct": 81.82,
+    "status": "PROVISIONAL",
+    "macro_gate": "FAIL",
+    "physical_gate": "PROVISIONAL_5Q_NORMALIZATION",
+    "walk_forward_metrics": {
+      "mape": 0.23636320788638968,
+      "r2": -0.2912329703037593,
+      "mean_bias": -0.23636320788638968
+    },
+    "governance": {
+      "no_imputation": true,
+      "publication_gate": "VALID_ONLY_IF_BOTH_GATES_PASS_AND_NO_GUARDRAIL"
+    }
+  },
+  "model_status": "PROVISIONAL",
+  "errors": [],
+  "data_quality": "OK"
 }

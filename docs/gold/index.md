@@ -4,39 +4,39 @@ title: Gold Equilibrium Price
 
 # Gold Equilibrium Price
 
-> **UNAVAILABLE · GOVERNANCE GATE ACTIVE**
+> **PROVISIONAL · GOVERNANCE GATE ACTIVE**
 
 السعر المتعادل للذهب مقابل سعر السوق. النموذج يفصل بين **طبقة نقدية يومية** و**طبقة أساسيات عرض/طلب ربع سنوية**، ولا يملأ البيانات الحرجة المفقودة اصطناعيًا.
 
 | المؤشر | القيمة |
 |---|---:|
-| XAU/USD Spot | **$4,309.80/oz** |
-| Equilibrium P* | **$—/oz** |
-| Market vs P* | **—** |
-| Macro fair value | $—/oz |
-| Physical multiplier | — |
+| XAU/USD Spot | **$4,310.40/oz** |
+| Equilibrium P* | **$2,370.72/oz** |
+| Market vs P* | **+81.82%** |
+| Macro fair value | $2,050.22/oz |
+| Physical multiplier | 1.0000 |
 
 ## الاختبار والحوكمة
 
 | البند | الحالة |
 |---|---:|
-| Macro walk-forward gate | **—** |
-| Physical-history gate | **—** |
-| Walk-forward MAPE | —% |
-| Walk-forward R² | — |
-| Mean bias | —% |
+| Macro walk-forward gate | **FAIL** |
+| Physical-history gate | **PROVISIONAL_5Q_NORMALIZATION** |
+| Walk-forward MAPE | 23.64% |
+| Walk-forward R² | -0.291 |
+| Mean bias | -23.64% |
 | No-imputation | **ACTIVE** |
 
 ## آخر أساسيات World Gold Council
 
 | المؤشر | القيمة |
 |---|---:|
-| Period | — |
-| Mine production | — t |
-| Recycled gold | — t |
-| Bar & coin | — t |
-| ETFs | — t |
-| Central banks | — t |
+| Period | 2026-Q2 |
+| Mine production | 965.60 t |
+| Recycled gold | 326.10 t |
+| Bar & coin | 307.10 t |
+| ETFs | -44.80 t |
+| Central banks | 288.90 t |
 
 ## العوامل النقدية
 
@@ -60,6 +60,6 @@ title: Gold Equilibrium Price
 - Stooq — XAUUSD historical calibration series
 - XAUS / Gold API — indicative current market layer
 
-آخر تحديث آلي: `2026-09-14T09:09:13.730145+00:00`
+آخر تحديث آلي: `2026-09-14T09:09:51.128886+00:00`
 
 > للاستخدام التحليلي وليس توصية استثمارية.

@@ -1,6 +1,6 @@
 {
   "model_version": "gold-macro-ridge-v1.1",
-  "generated_at_utc": "2026-09-14T09:09:13.464953+00:00",
+  "generated_at_utc": "2026-09-14T09:09:50.518423+00:00",
   "target_source": "https://raw.githubusercontent.com/tohaitrieu/market-history/master/data/commodities/GOLD/GOLD-D1.csv",
   "training_start": "2010-01-31",
   "training_end": "2026-02-28",

@@ -22,9 +22,10 @@ jobs:
   update-copper:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout latest main
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Set up Python
@@ -53,6 +54,5 @@ jobs:
             echo "No output changes"
           else
             git commit -m "chore(copper): daily equilibrium refresh"
-            git pull --rebase origin main
-            git push origin main
+            git push origin HEAD:main
           fi

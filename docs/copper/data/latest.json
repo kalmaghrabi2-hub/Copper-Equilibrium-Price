@@ -1,6 +1,6 @@
 {
   "as_of": "2026-09-11",
-  "generated_at_utc": "2026-09-14T12:57:41+00:00",
+  "generated_at_utc": "2026-09-14T13:02:20+00:00",
   "engine_version": "copper-benchmark-aware-2.0",
   "data_status": "FRESH_PUBLIC_PROXY",
   "market": {
@@ -14,12 +14,12 @@
     "source_url": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
   },
   "calibration": {
-    "generated_at_utc": "2026-09-14T12:57:39.967272+00:00",
+    "generated_at_utc": "2026-09-14T13:02:18.751001+00:00",
     "model": "copper-weekly-benchmark-aware-ridge-v2",
     "frequency": "weekly",
     "forecast_horizon_weeks": 1,
     "target": "HG=F",
-    "target_source": "https://query1.finance.yahoo.com/v8/finance/chart/HG%3DF?period1=946684800&period2=1789390641&interval=1wk&events=history&includeAdjustedClose=true",
+    "target_source": "https://query1.finance.yahoo.com/v8/finance/chart/HG%3DF?period1=946684800&period2=1789390919&interval=1wk&events=history&includeAdjustedClose=true",
     "series": [
       "LAG_COPPER_LOG",
       "GC=F",
@@ -29,21 +29,21 @@
       "^VIX"
     ],
     "predictor_sources": {
-      "LAG_COPPER_LOG": "https://query1.finance.yahoo.com/v8/finance/chart/HG%3DF?period1=946684800&period2=1789390641&interval=1wk&events=history&includeAdjustedClose=true",
-      "GC=F": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=946684800&period2=1789390641&interval=1wk&events=history&includeAdjustedClose=true",
-      "CL=F": "https://query1.finance.yahoo.com/v8/finance/chart/CL%3DF?period1=946684800&period2=1789390641&interval=1wk&events=history&includeAdjustedClose=true",
-      "DX-Y.NYB": "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?period1=946684800&period2=1789390641&interval=1wk&events=history&includeAdjustedClose=true",
-      "^TNX": "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?period1=946684800&period2=1789390641&interval=1wk&events=history&includeAdjustedClose=true",
-      "^VIX": "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?period1=946684800&period2=1789390642&interval=1wk&events=history&includeAdjustedClose=true"
+      "LAG_COPPER_LOG": "https://query1.finance.yahoo.com/v8/finance/chart/HG%3DF?period1=946684800&period2=1789390919&interval=1wk&events=history&includeAdjustedClose=true",
+      "GC=F": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=946684800&period2=1789390920&interval=1wk&events=history&includeAdjustedClose=true",
+      "CL=F": "https://query1.finance.yahoo.com/v8/finance/chart/CL%3DF?period1=946684800&period2=1789390920&interval=1wk&events=history&includeAdjustedClose=true",
+      "DX-Y.NYB": "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?period1=946684800&period2=1789390920&interval=1wk&events=history&includeAdjustedClose=true",
+      "^TNX": "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?period1=946684800&period2=1789390920&interval=1wk&events=history&includeAdjustedClose=true",
+      "^VIX": "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?period1=946684800&period2=1789390920&interval=1wk&events=history&includeAdjustedClose=true"
     },
     "beta": [
-      0.9440324888614586,
-      0.5651750199443509,
-      0.005025874467239108,
-      -0.0031552466944239597,
-      -0.0037641757837587023,
-      -0.00027056852849427656,
-      -0.002575561227433899
+      0.944032143206784,
+      0.5651763441423538,
+      0.00502384823832454,
+      -0.0031558355370188474,
+      -0.00376386533943453,
+      -0.0002711397671959031,
+      -0.002575377368450036
     ],
     "means": [
       0.942581305949342,
@@ -96,8 +96,8 @@
     "metrics": {
       "n": 260,
       "r2": 0.9547,
-      "mape_pct": 2.632,
-      "accuracy_pct": 97.368,
+      "mape_pct": 2.633,
+      "accuracy_pct": 97.367,
       "rmse_usd_lb": 0.173,
       "naive_mape_pct": 2.631,
       "naive_accuracy_pct": 97.369,
@@ -114,11 +114,11 @@
     "publication_status": "PROVISIONAL",
     "live": {
       "as_of_week": "2026-09-10",
-      "anchor_usd_lb": 6.3885,
-      "raw_model_fair_value_usd_lb": 6.407332,
-      "raw_model_fair_value_usd_t": 14125.75,
-      "fair_value_usd_lb": 6.393208,
-      "fair_value_usd_t": 14094.61,
+      "anchor_usd_lb": 6.3855,
+      "raw_model_fair_value_usd_lb": 6.40432,
+      "raw_model_fair_value_usd_t": 14119.11,
+      "fair_value_usd_lb": 6.390205,
+      "fair_value_usd_t": 14087.99,
       "predicted_return_pct": 0.074
     },
     "rules": {
@@ -136,14 +136,14 @@
     }
   },
   "model": {
-    "calibrated_p_star_usd_t": 14094.61,
-    "calibrated_p_star_usd_lb": 6.393208,
-    "market_vs_pstar_pct": 1.020887,
+    "calibrated_p_star_usd_t": 14087.99,
+    "calibrated_p_star_usd_lb": 6.390205,
+    "market_vs_pstar_pct": 1.068357,
     "status": "PROVISIONAL",
     "confidence": "LOW",
     "accuracy": {
-      "oos_accuracy_pct": 97.368,
-      "mape_pct": 2.632,
+      "oos_accuracy_pct": 97.367,
+      "mape_pct": 2.633,
       "naive_mape_pct": 2.631,
       "skill_vs_naive_mse_pct": 0.1,
       "direction_accuracy_pct": 53.85,

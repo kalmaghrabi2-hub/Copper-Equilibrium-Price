@@ -45,3 +45,5 @@ jobs:
             git commit -m "chore(gold): refresh calibrated equilibrium data"
             git push origin HEAD:main
           fi
+
+# bounded-history retry

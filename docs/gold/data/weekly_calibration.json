@@ -1,9 +1,9 @@
 {
-  "generated_at_utc": "2026-09-14T10:27:57.691849+00:00",
+  "generated_at_utc": "2026-09-14T10:30:51.892472+00:00",
   "model": "weekly-yahoo-macro-ridge-v1",
   "frequency": "weekly",
   "target": "GC=F",
-  "target_source": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=1262304000&period2=1789381675&interval=1wk&events=history&includeAdjustedClose=true",
+  "target_source": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=1262304000&period2=1789381849&interval=1wk&events=history&includeAdjustedClose=true",
   "series": [
     "DX-Y.NYB",
     "^TNX",
@@ -11,17 +11,17 @@
     "TIP"
   ],
   "predictor_sources": {
-    "DX-Y.NYB": "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?period1=1262304000&period2=1789381675&interval=1wk&events=history&includeAdjustedClose=true",
-    "^TNX": "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?period1=1262304000&period2=1789381675&interval=1wk&events=history&includeAdjustedClose=true",
-    "^VIX": "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?period1=1262304000&period2=1789381675&interval=1wk&events=history&includeAdjustedClose=true",
-    "TIP": "https://query1.finance.yahoo.com/v8/finance/chart/TIP?period1=1262304000&period2=1789381675&interval=1wk&events=history&includeAdjustedClose=true"
+    "DX-Y.NYB": "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?period1=1262304000&period2=1789381849&interval=1wk&events=history&includeAdjustedClose=true",
+    "^TNX": "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?period1=1262304000&period2=1789381849&interval=1wk&events=history&includeAdjustedClose=true",
+    "^VIX": "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?period1=1262304000&period2=1789381849&interval=1wk&events=history&includeAdjustedClose=true",
+    "TIP": "https://query1.finance.yahoo.com/v8/finance/chart/TIP?period1=1262304000&period2=1789381849&interval=1wk&events=history&includeAdjustedClose=true"
   },
   "beta": [
-    7.415631432965557,
-    0.04728728325420545,
-    0.45816515240782546,
-    0.07186374046023002,
-    0.34529310540310465
+    7.415631618603193,
+    0.04728724367590825,
+    0.458165795537647,
+    0.07186379239411883,
+    0.3452933821204496
   ],
   "means": [
     93.01025254855062,

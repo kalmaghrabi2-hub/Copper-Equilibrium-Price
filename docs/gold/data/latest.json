@@ -1,46 +1,64 @@
 {
   "as_of_date": "2026-09-14",
-  "generated_at_utc": "2026-09-14T10:27:57.771448+00:00",
-  "model_version": "gold-weekly-hybrid-v1.2",
+  "generated_at_utc": "2026-09-14T10:30:51.985899+00:00",
+  "model_version": "gold-weekly-hybrid-v1.3",
   "market": {
-    "usd_oz": 4327.2001953125,
+    "usd_oz": 4327.7998046875,
     "as_of": "2026-09-14",
     "freshness_status": "futures_fallback",
     "provider": "Yahoo GC=F",
-    "source": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=1787567277&period2=1789381677&interval=1d&events=history"
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=1787567452&period2=1789381852&interval=1d&events=history"
   },
   "macro": {
     "DX-Y.NYB": {
       "series": "DX-Y.NYB",
       "date": "2026-09-14",
       "value": 99.56199645996094,
-      "source": "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?period1=1787567277&period2=1789381677&interval=1d&events=history"
+      "source": "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?period1=1787567452&period2=1789381852&interval=1d&events=history"
     },
     "^TNX": {
       "series": "^TNX",
       "date": "2026-09-11",
       "value": 4.974999904632568,
-      "source": "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?period1=1787567278&period2=1789381678&interval=1d&events=history"
+      "source": "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?period1=1787567452&period2=1789381852&interval=1d&events=history"
     },
     "^VIX": {
       "series": "^VIX",
       "date": "2026-09-14",
-      "value": 17.979999542236328,
-      "source": "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?period1=1787567278&period2=1789381678&interval=1d&events=history"
+      "value": 17.959999084472656,
+      "source": "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?period1=1787567452&period2=1789381852&interval=1d&events=history"
     },
     "TIP": {
       "series": "TIP",
       "date": "2026-09-11",
       "value": 105.83999633789062,
-      "source": "https://query1.finance.yahoo.com/v8/finance/chart/TIP?period1=1787567278&period2=1789381678&interval=1d&events=history"
+      "source": "https://query1.finance.yahoo.com/v8/finance/chart/TIP?period1=1787567452&period2=1789381852&interval=1d&events=history"
     }
   },
+  "fundamentals": {
+    "mine_production_t": 965.6,
+    "producer_hedging_t": -22.8,
+    "recycled_gold_t": 326.1,
+    "total_supply_t": 1268.9,
+    "jewellery_fabrication_t": 310.3,
+    "technology_t": 80.4,
+    "investment_t": 262.2,
+    "bar_coin_t": 307.1,
+    "etf_t": -44.8,
+    "central_banks_t": 288.9,
+    "gold_demand_ex_otc_t": 941.8,
+    "otc_other_t": 327.1,
+    "total_demand_t": 1268.9,
+    "quarter_avg_lbma_usd_oz": 4506.3,
+    "source": "https://www.gold.org/goldhub/research/gold-demand-trends/gold-demand-trends-q2-2026",
+    "quarter": "2026-Q2"
+  },
   "calibration": {
-    "generated_at_utc": "2026-09-14T10:27:57.691849+00:00",
+    "generated_at_utc": "2026-09-14T10:30:51.892472+00:00",
     "model": "weekly-yahoo-macro-ridge-v1",
     "frequency": "weekly",
     "target": "GC=F",
-    "target_source": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=1262304000&period2=1789381675&interval=1wk&events=history&includeAdjustedClose=true",
+    "target_source": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=1262304000&period2=1789381849&interval=1wk&events=history&includeAdjustedClose=true",
     "series": [
       "DX-Y.NYB",
       "^TNX",
@@ -48,17 +66,17 @@
       "TIP"
     ],
     "predictor_sources": {
-      "DX-Y.NYB": "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?period1=1262304000&period2=1789381675&interval=1wk&events=history&includeAdjustedClose=true",
-      "^TNX": "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?period1=1262304000&period2=1789381675&interval=1wk&events=history&includeAdjustedClose=true",
-      "^VIX": "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?period1=1262304000&period2=1789381675&interval=1wk&events=history&includeAdjustedClose=true",
-      "TIP": "https://query1.finance.yahoo.com/v8/finance/chart/TIP?period1=1262304000&period2=1789381675&interval=1wk&events=history&includeAdjustedClose=true"
+      "DX-Y.NYB": "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?period1=1262304000&period2=1789381849&interval=1wk&events=history&includeAdjustedClose=true",
+      "^TNX": "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?period1=1262304000&period2=1789381849&interval=1wk&events=history&includeAdjustedClose=true",
+      "^VIX": "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?period1=1262304000&period2=1789381849&interval=1wk&events=history&includeAdjustedClose=true",
+      "TIP": "https://query1.finance.yahoo.com/v8/finance/chart/TIP?period1=1262304000&period2=1789381849&interval=1wk&events=history&includeAdjustedClose=true"
     },
     "beta": [
-      7.415631432965557,
-      0.04728728325420545,
-      0.45816515240782546,
-      0.07186374046023002,
-      0.34529310540310465
+      7.415631618603193,
+      0.04728724367590825,
+      0.458165795537647,
+      0.07186379239411883,
+      0.3452933821204496
     ],
     "means": [
       93.01025254855062,
@@ -93,10 +111,28 @@
       "missing_data": "complete-case only; no imputation"
     }
   },
-  "model": null,
-  "model_status": "UNAVAILABLE",
-  "errors": [
-    "WGC: WGC unavailable: missing WGC ETFs & Similar Products | missing WGC ETFs & Similar Products | HTTP Error 404: Not Found | missing WGC ETFs & Similar Products | missing WGC ETFs & Similar Products | missing WGC ETFs & Similar Products | HTTP Error 404: Not Found | missing WGC ETFs & Similar Products"
-  ],
-  "data_quality": "DEGRADED"
+  "model": {
+    "macro_fair_value_usd_oz": 2983.07,
+    "physical_overlay": {
+      "strategic_demand_share": 0.692174,
+      "recycling_share": 0.256994,
+      "multiplier": 1.07236,
+      "status": "UNCALIBRATED_OVERLAY"
+    },
+    "fundamental_p_star_usd_oz": 3198.93,
+    "raw_combined_p_star_usd_oz": 3198.93,
+    "market_vs_pstar_pct": 35.29,
+    "guardrail_active": false,
+    "status": "PROVISIONAL",
+    "confidence": "LOW",
+    "governance": {
+      "weekly_walk_forward": "FAIL",
+      "fundamentals_historical_calibration": "PENDING",
+      "no_imputation": true,
+      "publication_gate": "PROVISIONAL_ONLY"
+    }
+  },
+  "model_status": "PROVISIONAL",
+  "errors": [],
+  "data_quality": "OK"
 }

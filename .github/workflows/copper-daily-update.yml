@@ -27,16 +27,13 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Compile sources
         run: python -m compileall -q copper/src
-
-      - name: Calibrate benchmark-aware weekly market model
+      - name: Calibrate strict benchmark-aware weekly market model
         shell: bash
         run: |
           for attempt in 1 2 3; do
@@ -44,16 +41,10 @@ jobs:
             if [ "$attempt" -eq 3 ]; then exit 1; fi
             sleep 15
           done
-
-      - name: Update latest copper equilibrium data
-        shell: bash
-        run: |
-          for attempt in 1 2 3; do
-            python copper/src/update_copper.py && break
-            if [ "$attempt" -eq 3 ]; then exit 1; fi
-            sleep 15
-          done
-
+      - name: Update latest copper data
+        run: python copper/src/update_copper.py
+      - name: Enforce strict publication gate
+        run: python copper/src/apply_publication_gate.py
       - name: Commit refreshed outputs
         run: |
           git config user.name "copper-equilibrium-bot"
@@ -62,7 +53,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No output changes"
           else
-            git commit -m "chore(copper): daily benchmark-aware equilibrium refresh"
+            git commit -m "chore(copper): strict-governance daily refresh"
             git pull --rebase origin main
             git push origin main
           fi

@@ -1,0 +1,12 @@
+{
+  "as_of_date": "2026-09-14",
+  "generated_at_utc": null,
+  "model_version": "gold-phase0-v0.1",
+  "market": null,
+  "macro": {},
+  "fundamentals": null,
+  "model": null,
+  "model_status": "AWAITING_FIRST_AUTOMATED_RUN",
+  "data_quality": "PENDING",
+  "errors": []
+}

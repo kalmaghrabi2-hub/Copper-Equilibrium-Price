@@ -10,6 +10,7 @@ from pathlib import Path
 
 WESTMETALL_URL = "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
 OUTPUT = Path("docs/copper/data/latest.json")
+INDEX = Path("docs/index.html")
 STRUCTURAL_PSTAR = 10469.088447
 
 
@@ -130,6 +131,46 @@ def load_previous() -> dict | None:
         return None
 
 
+def fmt_price(v: float, decimals: int = 2) -> str:
+    return f"${v:,.{decimals}f}/t"
+
+
+def update_index(data: dict) -> None:
+    if not INDEX.exists():
+        raise RuntimeError("docs/index.html is missing")
+    text = INDEX.read_text(encoding="utf-8")
+    m = data["market"]
+    s = data["structural_model"]
+    gap = float(s["market_vs_pstar_pct"])
+    status = data.get("data_status", "UNKNOWN")
+
+    replacements = [
+        (
+            r'(<span class="muted">LME Cash — public validation proxy</span><strong class="copper">).*?(</strong><small>).*?(</small>)',
+            rf'\g<1>{fmt_price(m["lme_cash_usd_t"])}\g<2>آخر جلسة موثقة داخل المحرك: {data["as_of"]} · {status}\g<3>',
+        ),
+        (
+            r'(<span class="muted">Market vs P\*</span><strong class="red">).*?(</strong><small>).*?(</small>)',
+            rf'\g<1>{gap:+.1f}%\g<2>{"السوق أعلى من التوازن الهيكلي" if gap >= 0 else "السوق أدنى من التوازن الهيكلي"}\g<3>',
+        ),
+        (
+            r'(<div class="row"><span>LME 3M</span><b>).*?(</b></div>)',
+            rf'\g<1>{fmt_price(m["lme_3m_usd_t"], 0)}\g<2>',
+        ),
+        (
+            r'(<div class="row"><span>LME Stocks</span><b>).*?(</b></div>)',
+            rf'\g<1>{int(m["lme_stock_t"]):,} t\g<2>',
+        ),
+    ]
+
+    for pattern, replacement in replacements:
+        text, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+        if count != 1:
+            raise RuntimeError(f"Dashboard pattern did not match exactly once: {pattern[:50]}")
+
+    INDEX.write_text(text, encoding="utf-8")
+
+
 def main() -> None:
     previous = load_previous()
     try:
@@ -142,11 +183,12 @@ def main() -> None:
         data["data_status"] = "STALE_LAST_VERIFIED"
         data["stale_reason"] = str(exc)[:240]
 
-    data["engine_version"] = "copper-daily-1.0"
+    data["engine_version"] = "copper-daily-1.1"
     data["generated_at_utc"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    update_index(data)
     print(json.dumps({"ok": True, "as_of": data.get("as_of"), "status": data.get("data_status")}, ensure_ascii=False))
 
 

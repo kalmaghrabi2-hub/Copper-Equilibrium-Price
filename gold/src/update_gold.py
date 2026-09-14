@@ -1,29 +1,31 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import csv,io,json,math,re,urllib.request
+import json,math,re,urllib.parse,urllib.request
 from datetime import datetime,timezone
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2];OUT=ROOT/'docs/gold/data/latest.json';CAL=ROOT/'docs/gold/data/weekly_calibration.json'
-UA='GoldEquilibriumPrice/1.1';MACRO_SERIES=['dx.f','10usy.b','2usy.b','^vix']
+UA='Mozilla/5.0 GoldEquilibriumPrice/1.2';MACRO_SERIES=['DX-Y.NYB','^TNX','^VIX','TIP']
 def get_text(url,timeout=45):
  r=urllib.request.Request(url,headers={'User-Agent':UA,'Accept':'*/*'})
  with urllib.request.urlopen(r,timeout=timeout) as x:return x.read().decode('utf-8',errors='replace')
 def get_json(u):return json.loads(get_text(u))
-def stooq_quote(s):
- u=f'https://stooq.com/q/l/?s={s}&f=sd2t2ohlcv&h&e=csv';rows=list(csv.DictReader(io.StringIO(get_text(u))))
- if not rows:raise RuntimeError('no Stooq quote '+s)
- r=rows[-1];v=(r.get('Close') or '').strip()
- if v in ('','N/D'):raise RuntimeError('invalid Stooq quote '+s)
- return {'series':s,'date':r.get('Date'),'value':float(v),'source':u}
+def yahoo_quote(s):
+ q=urllib.parse.quote(s,safe='');now=int(datetime.now(timezone.utc).timestamp());start=now-21*86400;u=f'https://query1.finance.yahoo.com/v8/finance/chart/{q}?period1={start}&period2={now}&interval=1d&events=history'
+ j=get_json(u);res=((j.get('chart') or {}).get('result') or [None])[0]
+ if not res:raise RuntimeError('Yahoo empty '+s)
+ ts=res.get('timestamp') or [];cl=(((res.get('indicators') or {}).get('quote') or [{}])[0].get('close') or [])
+ for t,v in reversed(list(zip(ts,cl))):
+  if v is not None and math.isfinite(float(v)):return {'series':s,'date':datetime.fromtimestamp(t,tz=timezone.utc).date().isoformat(),'value':float(v),'source':u}
+ raise RuntimeError('Yahoo no valid close '+s)
 def fetch_spot():
  try:
   j=get_json('https://xaus.com/api/v1/spot?compact=1');ds=j.get('data_state') or {};v=j.get('spot_usd_oz') or (j.get('xau') or {}).get('price')
   if v is None:raise RuntimeError('XAUS price missing')
   return {'usd_oz':float(v),'as_of':ds.get('as_of') or j.get('updated_at'),'freshness_status':ds.get('status','unknown'),'provider':'XAUS','source':'https://xaus.com/api/v1/spot'}
- except Exception as e:
+ except Exception:
   try:
-   q=stooq_quote('xauusd');return {'usd_oz':q['value'],'as_of':q['date'],'freshness_status':'fallback','provider':'Stooq XAUUSD','source':q['source']}
-  except Exception:
+   q=yahoo_quote('GC=F');return {'usd_oz':q['value'],'as_of':q['date'],'freshness_status':'futures_fallback','provider':'Yahoo GC=F','source':q['source']}
+  except Exception as e:
    j=get_json('https://api.gold-api.com/price/XAU');v=j.get('price')
    if v is None:raise RuntimeError('spot feeds failed '+str(e))
    return {'usd_oz':float(v),'as_of':j.get('updatedAt') or j.get('updated_at'),'freshness_status':'fallback','provider':'Gold API','source':'https://api.gold-api.com/price/XAU'}
@@ -68,13 +70,13 @@ def macro_value(m,cal):
 def overlay(w):
  strategic=w['bar_coin_t']+w['etf_t']+w['central_banks_t']+w['otc_other_t'];share=strategic/max(w['total_supply_t'],1);recycle=w['recycled_gold_t']/max(w['total_supply_t'],1);raw=math.exp(.35*(share-.50)-.20*(recycle-.27));mult=min(max(raw,.88),1.12);return {'strategic_demand_share':share,'recycling_share':recycle,'multiplier':mult,'status':'UNCALIBRATED_OVERLAY'}
 def main():
- now=datetime.now(timezone.utc);err=[];p={'as_of_date':now.date().isoformat(),'generated_at_utc':now.isoformat(),'model_version':'gold-weekly-hybrid-v1.1'}
+ now=datetime.now(timezone.utc);err=[];p={'as_of_date':now.date().isoformat(),'generated_at_utc':now.isoformat(),'model_version':'gold-weekly-hybrid-v1.2'}
  try:spot=fetch_spot();p['market']=spot
  except Exception as e:err.append('spot: '+str(e));spot=None
  macro={}
  for s in MACRO_SERIES:
-  try:macro[s]=stooq_quote(s)
-  except Exception as e:err.append(f'Stooq {s}: {e}')
+  try:macro[s]=yahoo_quote(s)
+  except Exception as e:err.append(f'Yahoo {s}: {e}')
  p['macro']=macro
  try:w=fetch_wgc(now);p['fundamentals']=w
  except Exception as e:err.append('WGC: '+str(e));w=None

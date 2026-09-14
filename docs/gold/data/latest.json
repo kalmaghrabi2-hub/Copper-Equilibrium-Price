@@ -1,11 +1,11 @@
 {
   "as_of_date": "2026-09-14",
-  "generated_at_utc": "2026-09-14T09:06:02.742167+00:00",
+  "generated_at_utc": "2026-09-14T09:09:13.730145+00:00",
   "model_version": "gold-equilibrium-v1",
   "market": {
-    "usd_oz": 4310.200195,
+    "usd_oz": 4309.799805,
     "provider": "XAUS",
-    "as_of": "2026-09-14T09:05:36.671Z",
+    "as_of": "2026-09-14T09:09:04.334Z",
     "freshness_status": "fresh",
     "source": "https://xaus.com/api/v1/spot?compact=1"
   },

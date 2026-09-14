@@ -10,7 +10,7 @@ title: Gold Equilibrium Price
 
 | المؤشر | القيمة |
 |---|---:|
-| XAU/USD Spot | **$4,310.20/oz** |
+| XAU/USD Spot | **$4,309.80/oz** |
 | Equilibrium P* | **$—/oz** |
 | Market vs P* | **—** |
 | Macro fair value | $—/oz |
@@ -60,6 +60,6 @@ title: Gold Equilibrium Price
 - Stooq — XAUUSD historical calibration series
 - XAUS / Gold API — indicative current market layer
 
-آخر تحديث آلي: `2026-09-14T09:06:02.742167+00:00`
+آخر تحديث آلي: `2026-09-14T09:09:13.730145+00:00`
 
 > للاستخدام التحليلي وليس توصية استثمارية.

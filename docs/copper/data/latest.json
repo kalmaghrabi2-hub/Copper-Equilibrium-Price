@@ -1,0 +1,36 @@
+{
+  "as_of": "2026-09-11",
+  "market": {
+    "lme_cash_usd_t": 14238.5,
+    "lme_3m_usd_t": 14233.0,
+    "lme_stock_t": 234475,
+    "cash_3m_spread_usd_t": 5.5,
+    "curve_state": "backwardation",
+    "source": "Westmetall public validation proxy",
+    "source_url": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
+  },
+  "structural_model": {
+    "p_star_usd_t": 10469.088447,
+    "p_star_usd_lb": 4.748672,
+    "market_vs_pstar_pct": 36.005155,
+    "residual_structural_gap_mt": 2.711236079,
+    "optimistic_usd_t": 8599.16355,
+    "stress_lower_bound_usd_t": 24500.0
+  },
+  "governance": {
+    "model_status": "PROVISIONAL",
+    "confidence": "LOW",
+    "final_daily_pstar_published": false,
+    "walk_forward": "BLOCKED",
+    "market_months": 80,
+    "exact_public_icsg_months": 35,
+    "longest_consecutive_icsg_months": 11,
+    "minimum_consecutive_required": 36,
+    "no_imputation": true,
+    "publication_lag_control": true,
+    "reason": "Final calibrated daily P* remains blocked until >=36 consecutive complete monthly fundamentals pass look-ahead-safe walk-forward validation."
+  },
+  "data_status": "FRESH_PUBLIC_PROXY",
+  "engine_version": "copper-daily-1.0",
+  "generated_at_utc": "2026-09-14T12:30:00+00:00"
+}

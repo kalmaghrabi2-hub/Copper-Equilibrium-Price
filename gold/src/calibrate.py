@@ -11,37 +11,44 @@ from sklearn.metrics import r2_score, mean_absolute_percentage_error
 
 ROOT = Path(__file__).resolve().parents[2]
 MODEL_OUT = ROOT / 'gold' / 'model' / 'model.json'
-UA = 'GoldEquilibriumPrice/1.0 (+https://github.com/kalmaghrabi2-hub/copper-equilibrium-price)'
+UA = 'GoldEquilibriumPrice/1.1 (+https://github.com/kalmaghrabi2-hub/copper-equilibrium-price)'
 FRED = 'https://fred.stlouisfed.org/graph/fredgraph.csv?id={}'
-STOOQ = 'https://stooq.com/q/d/l/?s=xauusd&i=d'
+GOLD_HISTORY = 'https://raw.githubusercontent.com/tohaitrieu/market-history/master/data/commodities/GOLD/GOLD-D1.csv'
 FEATURES = ['DFII10','DTWEXBGS','T10YIE','VIXCLS_LOG']
 
-def get(url: str, timeout: int = 40) -> bytes:
+def get(url: str, timeout: int = 60) -> bytes:
     r = requests.get(url, headers={'User-Agent': UA}, timeout=timeout)
     r.raise_for_status()
     return r.content
 
 def fred(series: str) -> pd.Series:
     raw = pd.read_csv(io.BytesIO(get(FRED.format(series))))
+    if raw.shape[1] != 2:
+        raise RuntimeError(f'Unexpected FRED schema for {series}: {list(raw.columns)}')
     raw.columns = ['date', series]
-    raw['date'] = pd.to_datetime(raw['date'])
+    raw['date'] = pd.to_datetime(raw['date'], errors='coerce')
     raw[series] = pd.to_numeric(raw[series], errors='coerce')
     return raw.dropna().set_index('date')[series].sort_index()
 
 def gold_price() -> pd.Series:
-    raw = pd.read_csv(io.BytesIO(get(STOOQ)))
-    raw.columns = [c.lower() for c in raw.columns]
-    raw['date'] = pd.to_datetime(raw['date'])
-    s = pd.to_numeric(raw['close'], errors='coerce')
-    s.index = raw['date']
-    s = s.dropna().sort_index()
-    if s.empty or s.index.max().year < 2024:
-        raise RuntimeError('Stooq XAUUSD history is missing/stale')
-    return s.rename('gold')
+    raw = pd.read_csv(io.BytesIO(get(GOLD_HISTORY)))
+    required = {'Time','Close'}
+    if not required.issubset(raw.columns):
+        raise RuntimeError(f'Unexpected gold-history schema: {list(raw.columns)}')
+    dates = pd.to_datetime(raw['Time'], errors='coerce')
+    close = pd.to_numeric(raw['Close'], errors='coerce')
+    s = pd.Series(close.values, index=dates, name='gold').dropna().sort_index()
+    s = s[~s.index.duplicated(keep='last')]
+    if s.empty or s.index.min().year > 2010:
+        raise RuntimeError('Gold history does not reach 2010')
+    if s.index.max().year < 2025:
+        raise RuntimeError(f'Gold history stale: last date {s.index.max().date()}')
+    return s
 
 def build_monthly() -> pd.DataFrame:
     daily = pd.concat([gold_price(), fred('DFII10'), fred('DTWEXBGS'), fred('T10YIE'), fred('VIXCLS')], axis=1).sort_index()
-    daily[['DFII10','DTWEXBGS','T10YIE','VIXCLS']] = daily[['DFII10','DTWEXBGS','T10YIE','VIXCLS']].ffill(limit=7)
+    macro_cols=['DFII10','DTWEXBGS','T10YIE','VIXCLS']
+    daily[macro_cols] = daily[macro_cols].ffill(limit=7)
     m = daily.loc['2010-01-01':].resample('ME').mean()
     m['VIXCLS_LOG'] = np.log(m['VIXCLS'].clip(lower=1.0))
     m['target'] = np.log(m['gold'])
@@ -96,8 +103,9 @@ def main():
     final_model, mu, sd = fit_standardized_ridge(df, alpha)
     latest_macro_pstar = float(predict(final_model, mu, sd, df.iloc[[-1]])[0])
     payload = {
-        'model_version': 'gold-macro-ridge-v1',
+        'model_version': 'gold-macro-ridge-v1.1',
         'generated_at_utc': datetime.now(timezone.utc).isoformat(),
+        'target_source': GOLD_HISTORY,
         'training_start': df.index.min().date().isoformat(),
         'training_end': df.index.max().date().isoformat(),
         'observations_monthly': int(len(df)),
@@ -114,10 +122,10 @@ def main():
         'macro_validation_gate': 'PASS' if gate else 'FAIL',
         'macro_pstar_latest_usd_oz': round(latest_macro_pstar, 2),
         'notes': [
-            'Target is monthly average XAUUSD close from Stooq.',
+            'Target is monthly average GOLD close from the public-domain market-history repository.',
             'Macro features are public FRED series; VIX is log-transformed.',
-            'Walk-forward forecasts are one month ahead using only prior data.',
-            'Physical WGC overlay is governed separately and remains provisional until continuous historical WGC data is machine-readable in production.'
+            'Walk-forward forecasts are expanding-window one-month-ahead estimates using only prior observations.',
+            'Physical WGC overlay is governed separately and remains provisional until a continuous licensed/public machine-readable history is validated.'
         ]
     }
     MODEL_OUT.parent.mkdir(parents=True, exist_ok=True)

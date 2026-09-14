@@ -1,12 +1,44 @@
 {
   "as_of_date": "2026-09-14",
-  "generated_at_utc": null,
-  "model_version": "gold-phase0-v0.1",
-  "market": null,
-  "macro": {},
-  "fundamentals": null,
+  "generated_at_utc": "2026-09-14T09:06:02.742167+00:00",
+  "model_version": "gold-equilibrium-v1",
+  "market": {
+    "usd_oz": 4310.200195,
+    "provider": "XAUS",
+    "as_of": "2026-09-14T09:05:36.671Z",
+    "freshness_status": "fresh",
+    "source": "https://xaus.com/api/v1/spot?compact=1"
+  },
+  "macro": {
+    "DFII10": {
+      "series": "DFII10",
+      "date": "2026-09-10",
+      "value": 2.55,
+      "source": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFII10"
+    },
+    "DTWEXBGS": {
+      "series": "DTWEXBGS",
+      "date": "2026-09-04",
+      "value": 118.0732,
+      "source": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DTWEXBGS"
+    },
+    "T10YIE": {
+      "series": "T10YIE",
+      "date": "2026-09-11",
+      "value": 2.36,
+      "source": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=T10YIE"
+    },
+    "VIXCLS": {
+      "series": "VIXCLS",
+      "date": "2026-09-10",
+      "value": 17.84,
+      "source": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=VIXCLS"
+    }
+  },
   "model": null,
-  "model_status": "AWAITING_FIRST_AUTOMATED_RUN",
-  "data_quality": "PENDING",
-  "errors": []
+  "model_status": "UNAVAILABLE",
+  "errors": [
+    "WGC: https://www.gold.org/goldhub/research/gold-demand-trends/gold-demand-trends-q1-2025: ETFs & similar products"
+  ],
+  "data_quality": "DEGRADED"
 }

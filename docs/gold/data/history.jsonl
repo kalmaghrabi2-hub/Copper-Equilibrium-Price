@@ -1,0 +1,1 @@
+{"generated_at_utc": "2026-09-14T09:06:02.742167+00:00", "market": {"usd_oz": 4310.200195, "provider": "XAUS", "as_of": "2026-09-14T09:05:36.671Z", "freshness_status": "fresh", "source": "https://xaus.com/api/v1/spot?compact=1"}, "model": null, "data_quality": "DEGRADED"}

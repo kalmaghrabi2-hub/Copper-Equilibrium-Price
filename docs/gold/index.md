@@ -1,23 +1,65 @@
+---
+title: Gold Equilibrium Price
+---
+
 # Gold Equilibrium Price
 
-> **PROVISIONAL · GOVERNANCE GATE ACTIVE**
+> **UNAVAILABLE · GOVERNANCE GATE ACTIVE**
 
-موقع السعر المتعادل للذهب — نسخة التطوير الأولى.
+السعر المتعادل للذهب مقابل سعر السوق. النموذج يفصل بين **طبقة نقدية يومية** و**طبقة أساسيات عرض/طلب ربع سنوية**، ولا يملأ البيانات الحرجة المفقودة اصطناعيًا.
 
-## الحالة الحالية
+| المؤشر | القيمة |
+|---|---:|
+| XAU/USD Spot | **$4,310.20/oz** |
+| Equilibrium P* | **$—/oz** |
+| Market vs P* | **—** |
+| Macro fair value | $—/oz |
+| Physical multiplier | — |
 
-- Market layer: **AWAITING FIRST AUTOMATED RUN**
-- Structural P*: **PROVISIONAL**
-- Historical calibration: **PENDING**
-- Walk-forward validation: **PENDING**
-- No-imputation rule: **ACTIVE**
+## الاختبار والحوكمة
 
-## المنهجية
+| البند | الحالة |
+|---|---:|
+| Macro walk-forward gate | **—** |
+| Physical-history gate | **—** |
+| Walk-forward MAPE | —% |
+| Walk-forward R² | — |
+| Mean bias | —% |
+| No-imputation | **ACTIVE** |
 
-لا يتم استخدام إجمالي الطلب مقسومًا على إجمالي العرض مباشرة لأنهما يتطابقان محاسبيًا تقريبًا في بيانات الذهب. النموذج يقيس ضغط مكونات الطلب الاستراتيجي مقابل العرض، ثم يضيف أثر العائد الحقيقي والدولار والتضخم المتوقع والتقلب.
+## آخر أساسيات World Gold Council
+
+| المؤشر | القيمة |
+|---|---:|
+| Period | — |
+| Mine production | — t |
+| Recycled gold | — t |
+| Bar & coin | — t |
+| ETFs | — t |
+| Central banks | — t |
+
+## العوامل النقدية
+
+| المؤشر | القيمة |
+|---|---:|
+| 10Y real yield (DFII10) | 2.55% |
+| Broad USD (DTWEXBGS) | 118.07 |
+| 10Y breakeven (T10YIE) | 2.36% |
+| VIX | 17.84 |
+
+## منهجية السعر المتعادل
+
+إجمالي الطلب وإجمالي العرض في سوق الذهب يتساويان محاسبيًا تقريبًا، لذلك لا يستخدم النموذج نسبة `Total Demand / Total Supply` كإشارة. السعر المتعادل يجمع بين fair value نقدي مُعاير تاريخيًا وبين ضغط مكونات الطلب الاستراتيجي (البنوك المركزية، السبائك والعملات، ETF والتكنولوجيا) مقابل العرض الأولي والمعاد تدويره.
+
+حالة **VALID** لا تُمنح إلا عند نجاح بوابتين مستقلتين: اختبار Walk‑Forward للنموذج النقدي، واكتمال/اعتماد السلسلة التاريخية الفيزيائية. وإلا تبقى النتيجة **PROVISIONAL**.
 
 ## المصادر
 
-World Gold Council · XAUS · FRED
+- World Gold Council — Gold Demand Trends / Historical demand & supply
+- FRED — DFII10, DTWEXBGS, T10YIE, VIXCLS
+- Stooq — XAUUSD historical calibration series
+- XAUS / Gold API — indicative current market layer
 
-سيتم تحديث ملف البيانات اليومي آليًا بواسطة GitHub Actions بعد اعتماد فرع التطوير.
+آخر تحديث آلي: `2026-09-14T09:06:02.742167+00:00`
+
+> للاستخدام التحليلي وليس توصية استثمارية.

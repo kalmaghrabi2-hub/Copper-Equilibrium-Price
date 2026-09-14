@@ -1,0 +1,50 @@
+{
+  "model_version": "gold-macro-ridge-v1.1",
+  "generated_at_utc": "2026-09-14T09:06:02.441824+00:00",
+  "target_source": "https://raw.githubusercontent.com/tohaitrieu/market-history/master/data/commodities/GOLD/GOLD-D1.csv",
+  "training_start": "2010-01-31",
+  "training_end": "2026-02-28",
+  "observations_monthly": 194,
+  "walk_forward_start": "2019-01-31",
+  "walk_forward_end": "2026-02-28",
+  "walk_forward_observations": 86,
+  "alpha": 100.0,
+  "features": [
+    "DFII10",
+    "DTWEXBGS",
+    "T10YIE",
+    "VIXCLS_LOG"
+  ],
+  "feature_mean": {
+    "DFII10": 0.5543450480473459,
+    "DTWEXBGS": 108.91953129669754,
+    "T10YIE": 2.0746401173155964,
+    "VIXCLS_LOG": 2.8645218718470424
+  },
+  "feature_std": {
+    "DFII10": 0.8839442483493634,
+    "DTWEXBGS": 12.02406418073189,
+    "T10YIE": 0.3376442057476441,
+    "VIXCLS_LOG": 0.2937807541873606
+  },
+  "intercept": 7.381732729396885,
+  "coefficients_standardized": {
+    "DFII10": 0.043822878710028525,
+    "DTWEXBGS": 0.08842914984643614,
+    "T10YIE": 0.08876365392219189,
+    "VIXCLS_LOG": 0.046795557568411986
+  },
+  "metrics": {
+    "mape": 0.23636320788638968,
+    "r2": -0.2912329703037593,
+    "mean_bias": -0.23636320788638968
+  },
+  "macro_validation_gate": "FAIL",
+  "macro_pstar_latest_usd_oz": 1971.95,
+  "notes": [
+    "Target is monthly average GOLD close from the public-domain market-history repository.",
+    "Macro features are public FRED series; VIX is log-transformed.",
+    "Walk-forward forecasts are expanding-window one-month-ahead estimates using only prior observations.",
+    "Physical WGC overlay is governed separately and remains provisional until a continuous licensed/public machine-readable history is validated."
+  ]
+}

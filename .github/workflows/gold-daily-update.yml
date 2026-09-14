@@ -45,3 +45,5 @@ jobs:
             git commit -m "chore(gold): refresh weekly calibrated equilibrium data"
             git push origin HEAD:main
           fi
+
+# stooq-only production retry

@@ -1,0 +1,36 @@
+name: Gold Equilibrium Daily Update
+
+on:
+  schedule:
+    - cron: "20 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-gold:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Update gold data
+        run: python gold/src/update_gold.py
+
+      - name: Commit changed data
+        run: |
+          git config user.name "gold-equilibrium-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/gold/data/latest.json
+          if git diff --cached --quiet; then
+            echo "No data changes"
+          else
+            git commit -m "chore(gold): daily equilibrium data update"
+            git push
+          fi

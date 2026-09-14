@@ -29,7 +29,7 @@ jobs:
         run: python -m compileall -q gold/src
 
       - name: Calibrate weekly macro fair-value model
-        run: python gold/src/calibrate_gold_weekly.py
+        run: python gold/src/calibrate_gold_weekly_yahoo.py
 
       - name: Update latest gold equilibrium data
         run: python gold/src/update_gold.py
@@ -45,5 +45,3 @@ jobs:
             git commit -m "chore(gold): refresh weekly calibrated equilibrium data"
             git push origin HEAD:main
           fi
-
-# common-calendar weekly retry

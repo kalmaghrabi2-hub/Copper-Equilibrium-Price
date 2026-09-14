@@ -1,58 +1,63 @@
 {
-  "generated_at_utc": "2026-09-14T10:30:51.892472+00:00",
-  "model": "weekly-yahoo-macro-ridge-v1",
+  "generated_at_utc": "2026-09-14T10:32:37.562381+00:00",
+  "model": "weekly-arx-ridge-v2",
   "frequency": "weekly",
   "target": "GC=F",
-  "target_source": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=1262304000&period2=1789381849&interval=1wk&events=history&includeAdjustedClose=true",
+  "target_source": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=1262304000&period2=1789381954&interval=1wk&events=history&includeAdjustedClose=true",
   "series": [
+    "LAG_GOLD_LOG",
     "DX-Y.NYB",
     "^TNX",
     "^VIX",
     "TIP"
   ],
   "predictor_sources": {
-    "DX-Y.NYB": "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?period1=1262304000&period2=1789381849&interval=1wk&events=history&includeAdjustedClose=true",
-    "^TNX": "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?period1=1262304000&period2=1789381849&interval=1wk&events=history&includeAdjustedClose=true",
-    "^VIX": "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?period1=1262304000&period2=1789381849&interval=1wk&events=history&includeAdjustedClose=true",
-    "TIP": "https://query1.finance.yahoo.com/v8/finance/chart/TIP?period1=1262304000&period2=1789381849&interval=1wk&events=history&includeAdjustedClose=true"
+    "LAG_GOLD_LOG": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=1262304000&period2=1789381954&interval=1wk&events=history&includeAdjustedClose=true",
+    "DX-Y.NYB": "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?period1=1262304000&period2=1789381954&interval=1wk&events=history&includeAdjustedClose=true",
+    "^TNX": "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?period1=1262304000&period2=1789381954&interval=1wk&events=history&includeAdjustedClose=true",
+    "^VIX": "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?period1=1262304000&period2=1789381954&interval=1wk&events=history&includeAdjustedClose=true",
+    "TIP": "https://query1.finance.yahoo.com/v8/finance/chart/TIP?period1=1262304000&period2=1789381954&interval=1wk&events=history&includeAdjustedClose=true"
   },
   "beta": [
     7.415631618603193,
-    0.04728724367590825,
-    0.458165795537647,
-    0.07186379239411883,
-    0.3452933821204496
+    0.3497111502332063,
+    0.0014542296904170291,
+    0.004018198220540772,
+    0.0020077094023715505,
+    0.0011696369208121205
   ],
   "means": [
+    7.414093039881308,
     93.01025254855062,
     2.6819678501201416,
     18.403915015482326,
     113.856923056251
   ],
   "sds": [
+    0.3528426862043975,
     9.261355008975455,
     1.0476635239478789,
     6.804509952582584,
     6.200061262451308
   ],
-  "ridge_lambda": 4.0,
+  "ridge_lambda": 2.0,
   "metrics": {
     "n_weeks_total": 871,
     "walk_forward_n": 715,
     "walk_forward_start": "2013-01-03",
     "walk_forward_end": "2026-09-10",
-    "r2": 0.5538,
-    "mape_pct": 12.98,
-    "rmse_usd_oz": 593.66
+    "r2": 0.9954,
+    "mape_pct": 1.737,
+    "rmse_usd_oz": 60.47
   },
-  "walk_forward_gate": "FAIL",
-  "publication_status": "PROVISIONAL",
+  "walk_forward_gate": "PASS",
+  "publication_status": "CALIBRATED",
   "rules": {
     "min_training_weeks": 156,
     "min_oos_weeks": 260,
     "max_mape_pct": 12.0,
     "min_r2": 0.6,
-    "lookahead": "none; predictors lagged one full week",
+    "lookahead": "none; lagged gold and predictors are from prior week",
     "missing_data": "complete-case only; no imputation"
   }
 }

@@ -1,6 +1,8 @@
 name: Gold Equilibrium Daily Update
 
 on:
+  push:
+    branches: [gold-equilibrium-v1]
   schedule:
     - cron: "20 21 * * *"
   workflow_dispatch:
@@ -20,17 +22,26 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Update gold data
+      - name: Install dependencies
+        run: pip install -r gold/requirements.txt
+
+      - name: Calibrate macro fair-value model
+        run: python gold/src/calibrate.py
+
+      - name: Update market and fundamentals
         run: python gold/src/update_gold.py
 
-      - name: Commit changed data
+      - name: Render site
+        run: python gold/src/render_site.py
+
+      - name: Commit refreshed outputs
         run: |
           git config user.name "gold-equilibrium-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add docs/gold/data/latest.json
+          git add gold/model/model.json docs/gold/data/latest.json docs/gold/data/history.jsonl docs/gold/index.md
           if git diff --cached --quiet; then
-            echo "No data changes"
+            echo "No output changes"
           else
-            git commit -m "chore(gold): daily equilibrium data update"
+            git commit -m "chore(gold): refresh model and site [skip ci]"
             git push
           fi

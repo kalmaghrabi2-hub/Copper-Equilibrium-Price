@@ -11,7 +11,7 @@
   },
   "structural_model": {
     "p_star_usd_t": 10469.088447,
-    "p_star_usd_lb": 4.748672,
+    "p_star_usd_lb": 4.748699,
     "market_vs_pstar_pct": 36.005155,
     "residual_structural_gap_mt": 2.711236079,
     "optimistic_usd_t": 8599.16355,
@@ -31,6 +31,6 @@
     "reason": "Final calibrated daily P* remains blocked until >=36 consecutive complete monthly fundamentals pass look-ahead-safe walk-forward validation."
   },
   "data_status": "FRESH_PUBLIC_PROXY",
-  "engine_version": "copper-daily-1.0",
-  "generated_at_utc": "2026-09-14T12:30:00+00:00"
+  "engine_version": "copper-daily-1.1",
+  "generated_at_utc": "2026-09-14T12:28:06+00:00"
 }

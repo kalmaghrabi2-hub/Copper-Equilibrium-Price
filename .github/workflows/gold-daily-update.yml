@@ -10,48 +10,38 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: gold-equilibrium-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   update-gold:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout main
         uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
-        run: pip install -r gold/requirements.txt
-
       - name: Compile sources
         run: python -m compileall -q gold/src
 
-      - name: Calibrate macro fair-value model
-        run: python gold/src/calibrate.py
+      - name: Calibrate historical macro model
+        run: python gold/src/calibrate_gold.py
 
-      - name: Update market and fundamentals
+      - name: Update latest gold equilibrium data
         run: python gold/src/update_gold.py
 
-      - name: Render site
-        run: python gold/src/render_site.py
-
-      - name: Production healthcheck
-        run: python gold/src/healthcheck.py
-
-      - name: Commit refreshed outputs
+      - name: Commit refreshed outputs to main
         run: |
           git config user.name "gold-equilibrium-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add gold/model/model.json docs/gold/data/latest.json docs/gold/data/history.jsonl docs/gold/index.md
+          git add docs/gold/data/calibration.json docs/gold/data/latest.json
           if git diff --cached --quiet; then
             echo "No output changes"
           else
-            git commit -m "chore(gold): refresh model and site [skip ci]"
-            git push
+            git commit -m "chore(gold): refresh calibrated equilibrium data"
+            git push origin HEAD:main
           fi

@@ -1,11 +1,11 @@
 {
   "as_of_date": "2026-09-14",
-  "generated_at_utc": "2026-09-14T09:09:51.128886+00:00",
-  "model_version": "gold-equilibrium-v1.1",
+  "generated_at_utc": "2026-09-14T09:14:31.206544+00:00",
+  "model_version": "gold-equilibrium-v2",
   "market": {
-    "usd_oz": 4310.399902,
+    "usd_oz": 4307.100098,
     "provider": "XAUS",
-    "as_of": "2026-09-14T09:09:34.884Z",
+    "as_of": "2026-09-14T09:14:28.847Z",
     "freshness_status": "fresh",
     "source": "https://xaus.com/api/v1/spot?compact=1"
   },
@@ -60,23 +60,38 @@
     "physical_status": "PROVISIONAL_5Q_NORMALIZATION"
   },
   "model": {
-    "macro_fair_value_usd_oz": 2050.22,
+    "macro_predicted_return_pct": 2.662,
+    "macro_fair_value_usd_oz": 4531.64,
     "physical_multiplier": 1.0,
-    "raw_fundamental_p_star_usd_oz": 2050.22,
-    "fundamental_p_star_usd_oz": 2370.72,
-    "guardrail_applied": true,
-    "market_vs_pstar_pct": 81.82,
+    "fundamental_p_star_usd_oz": 4531.64,
+    "market_vs_pstar_pct": -4.95,
+    "distance_from_market_pct": 5.21,
+    "outlier_flag": false,
     "status": "PROVISIONAL",
-    "macro_gate": "FAIL",
+    "macro_gate": "PASS",
     "physical_gate": "PROVISIONAL_5Q_NORMALIZATION",
     "walk_forward_metrics": {
-      "mape": 0.23636320788638968,
-      "r2": -0.2912329703037593,
-      "mean_bias": -0.23636320788638968
+      "mape": 0.023652572018935777,
+      "naive_mape": 0.029369397266112058,
+      "improvement_vs_naive_pct": 19.46524538919514,
+      "return_r2": 0.2664170836541633,
+      "price_r2": 0.9906071565157324,
+      "directional_accuracy": 0.7717391304347826,
+      "mean_bias": -0.009188973897253691
+    },
+    "calibration_reference": {
+      "month": "2026-08-31",
+      "gold_usd_oz": 4412.614285714286,
+      "DFII10": 2.3971428571428572,
+      "DTWEXBGS": 118.85122857142856,
+      "T10YIE": 2.2871428571428574,
+      "VIXCLS": 15.229523809523808,
+      "gold_momentum_l1": 0.08099632787866058
     },
     "governance": {
       "no_imputation": true,
-      "publication_gate": "VALID_ONLY_IF_BOTH_GATES_PASS_AND_NO_GUARDRAIL"
+      "no_market_price_clipping": true,
+      "publication_gate": "VALID_ONLY_IF_BOTH_GATES_PASS_AND_NO_OUTLIER"
     }
   },
   "model_status": "PROVISIONAL",

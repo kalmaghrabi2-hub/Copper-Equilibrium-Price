@@ -7,6 +7,11 @@ on:
     paths:
       - "docs/**"
       - ".github/workflows/deploy-pages.yml"
+  workflow_run:
+    workflows:
+      - Copper Equilibrium Daily Update
+    types:
+      - completed
   schedule:
     - cron: "50 21 * * *"
   workflow_dispatch:
@@ -47,7 +52,9 @@ jobs:
 
   deploy:
     needs: check-pages
-    if: ${{ needs.check-pages.outputs.enabled == 'true' }}
+    if: >-
+      ${{ needs.check-pages.outputs.enabled == 'true' &&
+          (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

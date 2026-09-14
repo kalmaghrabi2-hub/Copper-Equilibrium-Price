@@ -1,267 +1,146 @@
 #!/usr/bin/env python3
-"""Gold equilibrium price pipeline — provisional public-data implementation.
-
-The model deliberately separates:
-1) daily market layer (XAU/USD),
-2) daily macro layer (FRED),
-3) quarterly physical/sectoral fundamentals (World Gold Council),
-4) governance gates.
-
-No missing critical value is fabricated. If a feed fails, status is downgraded.
-"""
 from __future__ import annotations
-
-import csv
-import io
-import json
-import math
-import re
-import urllib.error
-import urllib.request
+import csv, io, json, math, re
 from datetime import datetime, timezone
 from pathlib import Path
+import requests
 
-OUT = Path(__file__).resolve().parents[2] / "docs" / "gold" / "data" / "latest.json"
-UA = "GoldEquilibriumPrice/0.1 (+https://github.com/kalmaghrabi2-hub/copper-equilibrium-price)"
+ROOT = Path(__file__).resolve().parents[2]
+OUT = ROOT / 'docs' / 'gold' / 'data' / 'latest.json'
+HISTORY = ROOT / 'docs' / 'gold' / 'data' / 'history.jsonl'
+MODEL_FILE = ROOT / 'gold' / 'model' / 'model.json'
+UA = 'GoldEquilibriumPrice/1.0 (+https://github.com/kalmaghrabi2-hub/copper-equilibrium-price)'
 
+def text(url: str, timeout=35) -> str:
+    r = requests.get(url, headers={'User-Agent': UA, 'Accept': '*/*'}, timeout=timeout)
+    r.raise_for_status()
+    return r.text
 
-def get_text(url: str, timeout: int = 25) -> str:
-    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "*/*"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read().decode("utf-8", errors="replace")
-
-
-def get_json(url: str) -> dict:
-    return json.loads(get_text(url))
-
+def js(url: str):
+    return json.loads(text(url))
 
 def latest_fred(series: str) -> dict:
-    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}"
-    rows = list(csv.DictReader(io.StringIO(get_text(url))))
+    url = f'https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}'
+    rows = list(csv.DictReader(io.StringIO(text(url))))
     for row in reversed(rows):
-        raw = (row.get(series) or "").strip()
-        if raw not in ("", "."):
-            return {"series": series, "date": row["DATE"], "value": float(raw), "source": url}
-    raise RuntimeError(f"No valid FRED observation for {series}")
+        raw = (row.get(series) or '').strip()
+        if raw not in ('', '.'):
+            return {'series': series, 'date': row.get('observation_date') or row.get('DATE'), 'value': float(raw), 'source': url}
+    raise RuntimeError(f'No valid FRED observation: {series}')
 
+def spot() -> dict:
+    errors=[]
+    for provider,url,extract in [
+        ('XAUS','https://xaus.com/api/v1/spot?compact=1',lambda j: j.get('spot_usd_oz') or (j.get('xau') or {}).get('price')),
+        ('Gold API','https://api.gold-api.com/price/XAU',lambda j: j.get('price')),
+    ]:
+        try:
+            j=js(url); p=extract(j)
+            if p is None: raise ValueError('missing price')
+            state=j.get('data_state') or {}
+            return {'usd_oz':float(p),'provider':provider,'as_of':state.get('as_of') or j.get('updatedAt') or j.get('updated_at'),'freshness_status':state.get('status','fallback' if provider!='XAUS' else 'unknown'),'source':url}
+        except Exception as e: errors.append(f'{provider}: {e}')
+    raise RuntimeError(' | '.join(errors))
 
-def fetch_spot() -> dict:
-    # Primary: XAUS, because it exposes freshness metadata and is keyless.
-    try:
-        j = get_json("https://xaus.com/api/v1/spot?compact=1")
-        value = j.get("spot_usd_oz") or (j.get("xau") or {}).get("price")
-        ds = j.get("data_state") or {}
-        if value is None:
-            raise RuntimeError("XAUS response missing price")
-        return {
-            "usd_oz": float(value),
-            "as_of": ds.get("as_of") or j.get("updated_at"),
-            "freshness_status": ds.get("status", "unknown"),
-            "age_seconds": ds.get("age_seconds"),
-            "provider": "XAUS",
-            "source": "https://xaus.com/api/v1/spot",
-        }
-    except Exception as first_error:
-        # Fallback: gold-api.com, also keyless. We never silently hide fallback use.
-        j = get_json("https://api.gold-api.com/price/XAU")
-        value = j.get("price")
-        if value is None:
-            raise RuntimeError(f"Both spot feeds failed; primary error={first_error}")
-        return {
-            "usd_oz": float(value),
-            "as_of": j.get("updatedAt") or j.get("updated_at"),
-            "freshness_status": "fallback",
-            "age_seconds": None,
-            "provider": "Gold API",
-            "source": "https://api.gold-api.com/price/XAU",
-        }
-
-
-def candidate_wgc_urls(now: datetime) -> list[str]:
-    # Try the most recently completed quarter, then step backward.
-    q = ((now.month - 1) // 3) + 1
-    y = now.year
-    completed_q = q - 1
-    if completed_q == 0:
-        completed_q, y = 4, y - 1
-    candidates = []
-    cq, cy = completed_q, y
+def wgc_latest() -> dict:
+    now=datetime.now(timezone.utc); q=(now.month-1)//3+1; cq=q-1; cy=now.year
+    if cq==0: cq,cy=4,cy-1
+    last_error=''
     for _ in range(6):
-        candidates.append(
-            f"https://www.gold.org/goldhub/research/gold-demand-trends/gold-demand-trends-q{cq}-{cy}"
-        )
-        cq -= 1
-        if cq == 0:
-            cq, cy = 4, cy - 1
-    return candidates
-
-
-def parse_wgc_table(html: str, url: str) -> dict:
-    # Parse only the compact current-quarter table values needed by the model.
-    # WGC publishes labels and values in the public report HTML; retain attribution.
-    text = re.sub(r"<[^>]+>", " ", html)
-    text = re.sub(r"\s+", " ", text)
-
-    def last_value(label: str) -> float:
-        # Capture the five quarter values shown before q/q and y/y columns.
-        pat = re.escape(label) + r"\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)"
-        m = re.search(pat, text, flags=re.I)
-        if not m:
-            raise RuntimeError(f"Could not parse WGC row: {label}")
-        return float(m.group(5).replace(",", ""))
-
-    # The report's "Total Demand" equals supply by accounting construction, so the
-    # model uses sectoral demand pressure rather than a tautological total D/S ratio.
-    data = {
-        "mine_production_t": last_value("Mine Production"),
-        "producer_hedging_t": last_value("Net Producer Hedging"),
-        "recycled_gold_t": last_value("Recycled Gold"),
-        "total_supply_t": last_value("Total Supply"),
-        "jewellery_fabrication_t": last_value("Jewellery Fabrication"),
-        "technology_t": last_value("Technology"),
-        "investment_t": last_value("Investment"),
-        "bar_coin_t": last_value("Total Bar and Coin"),
-        "etf_t": last_value("ETFs & Similar Products"),
-        "central_banks_t": last_value("Central Banks & Other inst."),
-        "gold_demand_ex_otc_t": last_value("Gold Demand"),
-        "otc_other_t": last_value("OTC and Other"),
-        "total_demand_t": last_value("Total Demand"),
-        "quarter_avg_lbma_usd_oz": last_value("LBMA Gold Price (US$/oz)"),
-        "source": url,
-    }
-    # Extract report title/date when possible.
-    qmatch = re.search(r"Gold Demand Trends:\s*Q([1-4])\s*(\d{4})", text, re.I)
-    if qmatch:
-        data["quarter"] = f"{qmatch.group(2)}-Q{qmatch.group(1)}"
-    return data
-
-
-def fetch_wgc(now: datetime) -> dict:
-    errors = []
-    for url in candidate_wgc_urls(now):
+        url=f'https://www.gold.org/goldhub/research/gold-demand-trends/gold-demand-trends-q{cq}-{cy}'
         try:
-            html = get_text(url)
-            if "Gold supply and demand" not in html and "Total Supply" not in html:
-                raise RuntimeError("quarterly table marker missing")
-            return parse_wgc_table(html, url)
+            html=text(url)
+            plain=re.sub(r'<[^>]+>',' ',html); plain=re.sub(r'\s+',' ',plain)
+            def vals(label):
+                m=re.search(re.escape(label)+r"\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)\s*\|?\s*([\-\d,.]+)",plain,re.I)
+                if not m: raise ValueError(label)
+                return [float(x.replace(',','')) for x in m.groups()]
+            mine=vals('Mine Production'); recycled=vals('Recycled Gold'); hedging=vals('Net Producer Hedging')
+            tech=vals('Technology'); bar=vals('Total Bar and Coin')
+            try: etf=vals('ETFs & Similar Products')
+            except Exception: etf=vals('ETFs & similar products')
+            try: cb=vals('Central Banks & Other inst.')
+            except Exception: cb=vals('Central banks & other inst.')
+            price=vals('LBMA Gold Price (US$/oz)')
+            supply=vals('Total Supply')
+            pressure=[]
+            for i in range(5):
+                strategic=0.45*cb[i]+0.35*bar[i]+0.15*etf[i]+0.05*tech[i]
+                denom=max(1.0,mine[i]+recycled[i]+hedging[i])
+                pressure.append(strategic/denom)
+            med=sorted(pressure)[2]
+            cur=pressure[-1]
+            physical_multiplier=math.exp(0.85*(cur-med))
+            return {
+                'quarter':f'{cy}-Q{cq}','source':url,
+                'mine_production_t':mine[-1],'producer_hedging_t':hedging[-1],'recycled_gold_t':recycled[-1],'total_supply_t':supply[-1],
+                'technology_t':tech[-1],'bar_coin_t':bar[-1],'etf_t':etf[-1],'central_banks_t':cb[-1],
+                'quarter_avg_lbma_usd_oz':price[-1],
+                'pressure_last5':pressure,'pressure_median5':med,'pressure_current':cur,'physical_multiplier':physical_multiplier,
+                'physical_status':'PROVISIONAL_5Q_NORMALIZATION'
+            }
         except Exception as e:
-            errors.append(f"{url}: {e}")
-    raise RuntimeError("WGC quarterly fundamentals unavailable: " + " | ".join(errors))
+            last_error=f'{url}: {e}'
+            cq-=1
+            if cq==0: cq,cy=4,cy-1
+    raise RuntimeError(last_error)
 
-
-def build_model(spot: dict, macro: dict, wgc: dict) -> dict:
-    """Phase-0 transparent model. Parameters are explicitly provisional.
-
-    Gold needs a monetary overlay. The physical/sectoral block measures pressure from
-    relatively strategic demand (central banks, bar/coin, ETFs, technology) against
-    primary + recycled supply. Macro block penalises higher real yields and a stronger USD.
-
-    The anchor is the latest WGC quarterly average price. This is not declared VALID
-    until historical calibration and walk-forward gates pass.
-    """
-    supply = max(1.0, wgc["mine_production_t"] + wgc["recycled_gold_t"] + wgc["producer_hedging_t"])
-    strategic_demand = (
-        0.35 * max(0.0, wgc["central_banks_t"])
-        + 0.30 * max(0.0, wgc["bar_coin_t"])
-        + 0.20 * max(-150.0, wgc["etf_t"])
-        + 0.15 * max(0.0, wgc["technology_t"])
-    )
-    # Scale strategic demand into a pressure ratio around 1 without pretending it is
-    # the accounting total demand. Reference constant will be replaced by historical
-    # median during calibration.
-    demand_pressure = max(0.25, strategic_demand / 260.0)
-    supply_pressure = max(0.50, supply / 1250.0)
-
-    real_yield = macro["DFII10"]["value"]
-    dollar = macro["DTWEXBGS"]["value"]
-    breakeven = macro["T10YIE"]["value"]
-    vix = macro["VIXCLS"]["value"]
-
-    # Neutral reference levels are deliberately explicit and provisional.
-    monetary_multiplier = math.exp(
-        -0.10 * (real_yield - 2.0)
-        -0.004 * (dollar - 120.0)
-        +0.05 * (breakeven - 2.3)
-        +0.006 * (vix - 20.0)
-    )
-
-    eps_d = -0.45
-    eps_s = 0.20
-    exponent = 1.0 / (eps_s - eps_d)
-    physical_multiplier = (demand_pressure / supply_pressure) ** exponent
-
-    anchor = wgc["quarter_avg_lbma_usd_oz"]
-    p_star = anchor * physical_multiplier * monetary_multiplier
-    # Guardrail against a transient parsing/feed error producing absurd publication.
-    lower = 0.45 * spot["usd_oz"]
-    upper = 1.75 * spot["usd_oz"]
-    gated_p_star = min(max(p_star, lower), upper)
-
-    return {
-        "fundamental_p_star_usd_oz": round(gated_p_star, 2),
-        "raw_phase0_p_star_usd_oz": round(p_star, 2),
-        "market_vs_pstar_pct": round((spot["usd_oz"] / gated_p_star - 1.0) * 100.0, 2),
-        "demand_pressure_index": round(demand_pressure * 100.0, 3),
-        "supply_pressure_index": round(supply_pressure * 100.0, 3),
-        "physical_multiplier": round(physical_multiplier, 6),
-        "monetary_multiplier": round(monetary_multiplier, 6),
-        "elasticities": {"demand": eps_d, "supply": eps_s},
-        "status": "PROVISIONAL",
-        "confidence": "LOW_UNTIL_BACKTEST",
-        "governance": {
-            "historical_calibration": "PENDING",
-            "walk_forward": "PENDING",
-            "no_imputation": True,
-            "publication_gate": "PROVISIONAL_ONLY",
-        },
+def macro_pstar(model: dict, macro: dict) -> float:
+    feats={
+        'DFII10':macro['DFII10']['value'],
+        'DTWEXBGS':macro['DTWEXBGS']['value'],
+        'T10YIE':macro['T10YIE']['value'],
+        'VIXCLS_LOG':math.log(max(1.0,macro['VIXCLS']['value']))
     }
+    z=[]
+    for f in model['features']:
+        z.append((feats[f]-model['feature_mean'][f])/model['feature_std'][f])
+    logp=model['intercept']+sum(model['coefficients_standardized'][f]*zz for f,zz in zip(model['features'],z))
+    return math.exp(logp)
 
+def append_history(payload: dict):
+    HISTORY.parent.mkdir(parents=True,exist_ok=True)
+    compact={'generated_at_utc':payload['generated_at_utc'],'market':payload.get('market'),'model':payload.get('model'),'data_quality':payload['data_quality']}
+    with HISTORY.open('a',encoding='utf-8') as f: f.write(json.dumps(compact,ensure_ascii=False)+'\n')
 
-def main() -> None:
-    now = datetime.now(timezone.utc)
-    errors = []
-    payload = {
-        "as_of_date": now.date().isoformat(),
-        "generated_at_utc": now.isoformat(),
-        "model_version": "gold-phase0-v0.1",
-    }
-
-    try:
-        spot = fetch_spot()
-        payload["market"] = spot
-    except Exception as e:
-        errors.append(f"spot: {e}")
-        spot = None
-
-    macro = {}
-    for series in ("DFII10", "DTWEXBGS", "T10YIE", "VIXCLS"):
-        try:
-            macro[series] = latest_fred(series)
-        except Exception as e:
-            errors.append(f"FRED {series}: {e}")
-    payload["macro"] = macro
-
-    try:
-        wgc = fetch_wgc(now)
-        payload["fundamentals"] = wgc
-    except Exception as e:
-        errors.append(f"WGC: {e}")
-        wgc = None
-
-    if spot and wgc and all(k in macro for k in ("DFII10", "DTWEXBGS", "T10YIE", "VIXCLS")):
-        payload["model"] = build_model(spot, macro, wgc)
-        payload["model_status"] = "PROVISIONAL"
+def main():
+    now=datetime.now(timezone.utc); errors=[]
+    payload={'as_of_date':now.date().isoformat(),'generated_at_utc':now.isoformat(),'model_version':'gold-equilibrium-v1'}
+    try: payload['market']=mkt=spot()
+    except Exception as e: errors.append(f'spot: {e}'); mkt=None
+    macro={}
+    for s in ('DFII10','DTWEXBGS','T10YIE','VIXCLS'):
+        try: macro[s]=latest_fred(s)
+        except Exception as e: errors.append(f'FRED {s}: {e}')
+    payload['macro']=macro
+    try: payload['fundamentals']=fund=wgc_latest()
+    except Exception as e: errors.append(f'WGC: {e}'); fund=None
+    try: model=json.loads(MODEL_FILE.read_text(encoding='utf-8'))
+    except Exception as e: errors.append(f'model file: {e}'); model=None
+    if mkt and fund and model and all(s in macro for s in ('DFII10','DTWEXBGS','T10YIE','VIXCLS')):
+        macro_fair=macro_pstar(model,macro)
+        raw_pstar=macro_fair*fund['physical_multiplier']
+        lower,upper=0.55*mkt['usd_oz'],1.55*mkt['usd_oz']
+        guardrail_applied=raw_pstar<lower or raw_pstar>upper
+        pstar=max(lower,min(upper,raw_pstar))
+        macro_gate=model.get('macro_validation_gate')=='PASS'
+        physical_gate=fund.get('physical_status')=='VALID'
+        status='VALID' if macro_gate and physical_gate and not guardrail_applied else 'PROVISIONAL'
+        payload['model']={
+            'macro_fair_value_usd_oz':round(macro_fair,2),'physical_multiplier':round(fund['physical_multiplier'],6),
+            'raw_fundamental_p_star_usd_oz':round(raw_pstar,2),'fundamental_p_star_usd_oz':round(pstar,2),
+            'guardrail_applied':guardrail_applied,'market_vs_pstar_pct':round((mkt['usd_oz']/pstar-1)*100,2),
+            'status':status,'macro_gate':model.get('macro_validation_gate'),'physical_gate':fund.get('physical_status'),
+            'walk_forward_metrics':model.get('metrics'),
+            'governance':{'no_imputation':True,'publication_gate':'VALID_ONLY_IF_BOTH_GATES_PASS_AND_NO_GUARDRAIL'}
+        }
+        payload['model_status']=status
     else:
-        payload["model"] = None
-        payload["model_status"] = "UNAVAILABLE"
+        payload['model']=None; payload['model_status']='UNAVAILABLE'
+    payload['errors']=errors; payload['data_quality']='OK' if not errors else 'DEGRADED'
+    OUT.parent.mkdir(parents=True,exist_ok=True)
+    OUT.write_text(json.dumps(payload,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    append_history(payload)
+    print(json.dumps(payload,ensure_ascii=False,indent=2))
 
-    payload["errors"] = errors
-    payload["data_quality"] = "OK" if not errors else "DEGRADED"
-
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
-
-
-if __name__ == "__main__":
-    main()
+if __name__=='__main__': main()

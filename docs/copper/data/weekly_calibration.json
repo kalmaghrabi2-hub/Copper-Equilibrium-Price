@@ -1,11 +1,11 @@
 {
-  "generated_at_utc": "2026-11-19T02:18:08.026242+00:00",
+  "generated_at_utc": "2026-11-20T02:02:18.431550+00:00",
   "model": "copper-weekly-strict-governance-v3",
   "frequency": "weekly",
   "forecast_horizon_weeks": 1,
   "model_role": "near_term_market_reference_not_structural_equilibrium",
   "target": "HG=F",
-  "target_source": "https://query1.finance.yahoo.com/v8/finance/chart/HG%3DF?period1=946684800&period2=1795054674&interval=1wk&events=history&includeAdjustedClose=true",
+  "target_source": "https://query1.finance.yahoo.com/v8/finance/chart/HG%3DF?period1=946684800&period2=1795140127&interval=1wk&events=history&includeAdjustedClose=true",
   "series": [
     "LAG_COPPER_LOG",
     "GC=F",
@@ -15,37 +15,37 @@
     "^VIX"
   ],
   "predictor_sources": {
-    "LAG_COPPER_LOG": "https://query1.finance.yahoo.com/v8/finance/chart/HG%3DF?period1=946684800&period2=1795054674&interval=1wk&events=history&includeAdjustedClose=true",
-    "GC=F": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=946684800&period2=1795054674&interval=1wk&events=history&includeAdjustedClose=true",
-    "CL=F": "https://query1.finance.yahoo.com/v8/finance/chart/CL%3DF?period1=946684800&period2=1795054674&interval=1wk&events=history&includeAdjustedClose=true",
-    "DX-Y.NYB": "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?period1=946684800&period2=1795054674&interval=1wk&events=history&includeAdjustedClose=true",
-    "^TNX": "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?period1=946684800&period2=1795054674&interval=1wk&events=history&includeAdjustedClose=true",
-    "^VIX": "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?period1=946684800&period2=1795054674&interval=1wk&events=history&includeAdjustedClose=true"
+    "LAG_COPPER_LOG": "https://query1.finance.yahoo.com/v8/finance/chart/HG%3DF?period1=946684800&period2=1795140127&interval=1wk&events=history&includeAdjustedClose=true",
+    "GC=F": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=946684800&period2=1795140127&interval=1wk&events=history&includeAdjustedClose=true",
+    "CL=F": "https://query1.finance.yahoo.com/v8/finance/chart/CL%3DF?period1=946684800&period2=1795140127&interval=1wk&events=history&includeAdjustedClose=true",
+    "DX-Y.NYB": "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?period1=946684800&period2=1795140127&interval=1wk&events=history&includeAdjustedClose=true",
+    "^TNX": "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?period1=946684800&period2=1795140128&interval=1wk&events=history&includeAdjustedClose=true",
+    "^VIX": "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?period1=946684800&period2=1795140128&interval=1wk&events=history&includeAdjustedClose=true"
   },
   "beta": [
-    0.9500118814547248,
-    0.5681531919865055,
-    0.004893180225822182,
-    -0.003209319347449474,
-    -0.003806974089670865,
-    -0.00047183788662439425,
-    -0.0026121813668896912
+    0.9505625883283827,
+    0.5683231259191415,
+    0.004851256747285296,
+    -0.0032055645370710987,
+    -0.003811941937281458,
+    -0.0005117311852498799,
+    -0.0026310600019970364
   ],
   "means": [
-    0.9486588159461445,
-    1359.7959788361488,
-    65.36851602688171,
-    92.74461261570802,
-    3.2814663705682894,
-    19.52355993142602
+    0.949231991077418,
+    1361.5360109205226,
+    65.38158504522308,
+    92.75273196413362,
+    3.282769901331016,
+    19.52723885000492
   ],
   "sds": [
-    0.5731530627616448,
-    928.6411799550567,
-    24.606899705040174,
-    11.063272287680164,
-    1.2231260761119616,
-    8.30070919610197
+    0.5733357677787392,
+    930.530182451836,
+    24.60265987988804,
+    11.06330746633824,
+    1.2236294772413223,
+    8.298792579193552
   ],
   "ridge_lambda": 0.5,
   "blend_weight_vs_persistence": 0.5,
@@ -68,85 +68,85 @@
     ],
     "selected_validation_metrics": {
       "n": 156,
-      "r2": 0.9811,
-      "mape_pct": 2.174,
-      "fit_score_100_minus_mape_pct": 97.826,
-      "accuracy_pct": 97.826,
+      "r2": 0.9813,
+      "mape_pct": 2.17,
+      "fit_score_100_minus_mape_pct": 97.83,
+      "accuracy_pct": 97.83,
       "rmse_usd_lb": 0.101,
-      "naive_mape_pct": 2.18,
-      "naive_fit_score_100_minus_mape_pct": 97.82,
-      "naive_accuracy_pct": 97.82,
+      "naive_mape_pct": 2.178,
+      "naive_fit_score_100_minus_mape_pct": 97.822,
+      "naive_accuracy_pct": 97.822,
       "naive_rmse_usd_lb": 0.102,
-      "skill_vs_naive_mse_pct": 1.098,
-      "relative_mape_improvement_pct": 0.303,
+      "skill_vs_naive_mse_pct": 1.103,
+      "relative_mape_improvement_pct": 0.338,
       "direction_accuracy_pct": 52.56
     }
   },
   "metrics": {
     "n": 260,
     "r2": 0.9611,
-    "mape_pct": 2.637,
-    "fit_score_100_minus_mape_pct": 97.363,
-    "accuracy_pct": 97.363,
+    "mape_pct": 2.648,
+    "fit_score_100_minus_mape_pct": 97.352,
+    "accuracy_pct": 97.352,
     "rmse_usd_lb": 0.174,
-    "naive_mape_pct": 2.612,
-    "naive_fit_score_100_minus_mape_pct": 97.388,
-    "naive_accuracy_pct": 97.388,
-    "naive_rmse_usd_lb": 0.173,
-    "skill_vs_naive_mse_pct": -0.781,
-    "relative_mape_improvement_pct": -0.992,
+    "naive_mape_pct": 2.622,
+    "naive_fit_score_100_minus_mape_pct": 97.378,
+    "naive_accuracy_pct": 97.378,
+    "naive_rmse_usd_lb": 0.174,
+    "skill_vs_naive_mse_pct": -0.765,
+    "relative_mape_improvement_pct": -1.012,
     "direction_accuracy_pct": 53.85,
-    "n_weeks_total": 1368,
+    "n_weeks_total": 1369,
     "walk_forward_n": 260,
-    "walk_forward_start": "2021-11-25",
-    "walk_forward_end": "2026-11-12"
+    "walk_forward_start": "2021-12-02",
+    "walk_forward_end": "2026-11-19"
   },
   "diebold_mariano_vs_persistence": {
     "newey_west_lag": 4,
-    "statistic": -0.3891,
-    "one_sided_p_value": 0.651384,
-    "mean_loss_advantage": -0.00023466849657694547
+    "statistic": -0.3823,
+    "one_sided_p_value": 0.648867,
+    "mean_loss_advantage": -0.00023058859917459486
   },
   "regime_stability": {
     "windows": [
       {
-        "start": "2021-11-25",
-        "end": "2022-11-17",
-        "skill_vs_naive_mse_pct": 2.2,
-        "mape_pct": 2.992,
-        "naive_mape_pct": 2.991,
+        "start": "2021-12-02",
+        "end": "2022-11-24",
+        "skill_vs_naive_mse_pct": 2.0,
+        "mape_pct": 3.102,
+        "naive_mape_pct": 3.095,
         "positive_skill": false
       },
       {
-        "start": "2022-11-24",
-        "end": "2023-11-16",
-        "skill_vs_naive_mse_pct": -2.351,
-        "mape_pct": 2.27,
-        "naive_mape_pct": 2.237,
+        "start": "2022-12-01",
+        "end": "2023-11-23",
+        "skill_vs_naive_mse_pct": -1.661,
+        "mape_pct": 2.206,
+        "naive_mape_pct": 2.182,
         "positive_skill": false
       },
       {
-        "start": "2023-11-23",
-        "end": "2024-11-14",
-        "skill_vs_naive_mse_pct": -2.173,
-        "mape_pct": 2.558,
-        "naive_mape_pct": 2.493,
+        "start": "2023-11-30",
+        "end": "2024-11-21",
+        "skill_vs_naive_mse_pct": -2.511,
+        "mape_pct": 2.515,
+        "naive_mape_pct": 2.44,
         "positive_skill": false
       },
       {
-        "start": "2024-11-21",
-        "end": "2025-11-13",
-        "skill_vs_naive_mse_pct": -1.857,
-        "mape_pct": 3.194,
-        "naive_mape_pct": 3.191,
+        "start": "2024-11-28",
+        "end": "2025-11-20",
+        "skill_vs_naive_mse_pct": -1.56,
+        "mape_pct": 3.243,
+        "naive_mape_pct": 3.253,
         "positive_skill": false
       },
       {
-        "start": "2025-11-20",
-        "end": "2026-11-12",
-        "skill_vs_naive_mse_pct": 0.897,
-        "mape_pct": 2.172,
-        "naive_mape_pct": 2.146,
+        "start": "2025-11-27",
+        "end": "2026-11-19",
+        "skill_vs_naive_mse_pct": 0.247,
+        "mape_pct": 2.174,
+        "naive_mape_pct": 2.138,
         "positive_skill": false
       }
     ],
@@ -186,46 +186,46 @@
   "uncertainty": {
     "method": "empirical final-OOS log forecast errors; descriptive prediction interval",
     "candidate_80_pct_interval": [
-      5.4486,
-      5.903
+      5.2849,
+      5.7256
     ],
     "candidate_95_pct_interval": [
-      5.2668,
-      6.0533
+      5.1085,
+      5.8714
     ],
     "persistence_80_pct_interval": [
-      5.4598,
-      5.8975
+      5.3016,
+      5.7266
     ],
     "persistence_95_pct_interval": [
-      5.277,
-      6.0616
+      5.1241,
+      5.8859
     ],
     "candidate_80_pct_interval_usd_t": [
-      12012.11,
-      13013.89
+      11651.21,
+      12622.79
     ],
     "candidate_95_pct_interval_usd_t": [
-      11611.31,
-      13345.24
+      11262.31,
+      12944.22
     ],
     "persistence_80_pct_interval_usd_t": [
-      12036.8,
-      13001.76
+      11688.03,
+      12624.99
     ],
     "persistence_95_pct_interval_usd_t": [
-      11633.79,
-      13363.54
+      11296.71,
+      12976.19
     ]
   },
   "live": {
-    "as_of_week": "2026-11-12",
-    "anchor_usd_lb": 5.6595,
-    "raw_model_fair_value_usd_lb": 5.65246,
-    "raw_model_fair_value_usd_t": 12461.54,
-    "fair_value_usd_lb": 5.65598,
-    "fair_value_usd_t": 12469.3,
-    "predicted_return_pct": -0.062
+    "as_of_week": "2026-11-19",
+    "anchor_usd_lb": 5.4955,
+    "raw_model_fair_value_usd_lb": 5.476495,
+    "raw_model_fair_value_usd_t": 12073.6,
+    "fair_value_usd_lb": 5.485997,
+    "fair_value_usd_t": 12094.55,
+    "predicted_return_pct": -0.173
   },
   "rules": {
     "min_training_weeks": 156,

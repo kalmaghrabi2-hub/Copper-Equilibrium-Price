@@ -1,0 +1,47 @@
+name: Gold Equilibrium Daily Update
+
+on:
+  push:
+    branches: [gold-equilibrium-v1]
+  schedule:
+    - cron: "20 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-gold:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile sources
+        run: python -m compileall -q gold/src
+
+      - name: Calibrate weekly ARX fair-value model
+        run: python gold/src/calibrate_gold_weekly_arx.py
+
+      - name: Update latest gold equilibrium data
+        run: python gold/src/update_gold.py
+
+      - name: Commit refreshed outputs to main
+        run: |
+          git config user.name "gold-equilibrium-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/gold/data/weekly_calibration.json docs/gold/data/latest.json
+          if git diff --cached --quiet; then
+            echo "No output changes"
+          else
+            git commit -m "chore(gold): refresh ARX calibrated equilibrium data"
+            git push origin HEAD:main
+          fi

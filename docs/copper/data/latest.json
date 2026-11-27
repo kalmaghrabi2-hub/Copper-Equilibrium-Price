@@ -1,8 +1,8 @@
 {
   "as_of": "2026-11-25",
-  "generated_at_utc": "2026-11-26T03:23:15+00:00",
+  "generated_at_utc": "2026-11-27T03:30:29+00:00",
   "engine_version": "copper-benchmark-aware-2.1",
-  "data_status": "FRESH_PUBLIC_PROXY",
+  "data_status": "STALE_LAST_VERIFIED",
   "market": {
     "as_of": "2026-11-25",
     "lme_cash_usd_t": 11703.0,
@@ -14,13 +14,13 @@
     "source_url": "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
   },
   "calibration": {
-    "generated_at_utc": "2026-11-26T03:23:15.469079+00:00",
+    "generated_at_utc": "2026-11-27T03:30:28.953583+00:00",
     "model": "copper-weekly-strict-governance-v3",
     "frequency": "weekly",
     "forecast_horizon_weeks": 1,
     "model_role": "near_term_market_reference_not_structural_equilibrium",
     "target": "HG=F",
-    "target_source": "https://query1.finance.yahoo.com/v8/finance/chart/HG%3DF?period1=946684800&period2=1795663376&interval=1wk&events=history&includeAdjustedClose=true",
+    "target_source": "https://query1.finance.yahoo.com/v8/finance/chart/HG%3DF?period1=946684800&period2=1795750218&interval=1wk&events=history&includeAdjustedClose=true",
     "series": [
       "LAG_COPPER_LOG",
       "GC=F",
@@ -30,12 +30,12 @@
       "^VIX"
     ],
     "predictor_sources": {
-      "LAG_COPPER_LOG": "https://query1.finance.yahoo.com/v8/finance/chart/HG%3DF?period1=946684800&period2=1795663376&interval=1wk&events=history&includeAdjustedClose=true",
-      "GC=F": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=946684800&period2=1795663377&interval=1wk&events=history&includeAdjustedClose=true",
-      "CL=F": "https://query1.finance.yahoo.com/v8/finance/chart/CL%3DF?period1=946684800&period2=1795663377&interval=1wk&events=history&includeAdjustedClose=true",
-      "DX-Y.NYB": "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?period1=946684800&period2=1795663377&interval=1wk&events=history&includeAdjustedClose=true",
-      "^TNX": "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?period1=946684800&period2=1795663377&interval=1wk&events=history&includeAdjustedClose=true",
-      "^VIX": "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?period1=946684800&period2=1795663378&interval=1wk&events=history&includeAdjustedClose=true"
+      "LAG_COPPER_LOG": "https://query1.finance.yahoo.com/v8/finance/chart/HG%3DF?period1=946684800&period2=1795750218&interval=1wk&events=history&includeAdjustedClose=true",
+      "GC=F": "https://query1.finance.yahoo.com/v8/finance/chart/GC%3DF?period1=946684800&period2=1795750218&interval=1wk&events=history&includeAdjustedClose=true",
+      "CL=F": "https://query1.finance.yahoo.com/v8/finance/chart/CL%3DF?period1=946684800&period2=1795750218&interval=1wk&events=history&includeAdjustedClose=true",
+      "DX-Y.NYB": "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?period1=946684800&period2=1795750218&interval=1wk&events=history&includeAdjustedClose=true",
+      "^TNX": "https://query1.finance.yahoo.com/v8/finance/chart/%5ETNX?period1=946684800&period2=1795750218&interval=1wk&events=history&includeAdjustedClose=true",
+      "^VIX": "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?period1=946684800&period2=1795750219&interval=1wk&events=history&includeAdjustedClose=true"
     },
     "beta": [
       0.9505166515530862,
@@ -201,12 +201,12 @@
     "uncertainty": {
       "method": "empirical final-OOS log forecast errors; descriptive prediction interval",
       "candidate_80_pct_interval": [
-        5.1281,
-        5.5557
+        5.1292,
+        5.5569
       ],
       "candidate_95_pct_interval": [
-        4.9517,
-        5.6972
+        4.9528,
+        5.6985
       ],
       "persistence_80_pct_interval": [
         5.1444,
@@ -217,12 +217,12 @@
         5.7114
       ],
       "candidate_80_pct_interval_usd_t": [
-        11305.53,
-        12248.22
+        11307.95,
+        12250.87
       ],
       "candidate_95_pct_interval_usd_t": [
-        10916.63,
-        12560.18
+        10919.05,
+        12563.04
       ],
       "persistence_80_pct_interval_usd_t": [
         11341.46,
@@ -236,11 +236,11 @@
     "live": {
       "as_of_week": "2026-11-19",
       "anchor_usd_lb": 5.3325,
-      "raw_model_fair_value_usd_lb": 5.314049,
-      "raw_model_fair_value_usd_t": 11715.47,
-      "fair_value_usd_lb": 5.323275,
-      "fair_value_usd_t": 11735.81,
-      "predicted_return_pct": -0.173
+      "raw_model_fair_value_usd_lb": 5.316381,
+      "raw_model_fair_value_usd_t": 11720.61,
+      "fair_value_usd_lb": 5.324441,
+      "fair_value_usd_t": 11738.38,
+      "predicted_return_pct": -0.151
     },
     "rules": {
       "min_training_weeks": 156,
@@ -303,5 +303,6 @@
     "monthly_fundamental_walk_forward": "BLOCKED",
     "final_calibrated_daily_pstar": "BLOCKED"
   },
-  "model_status": "PROVISIONAL"
+  "model_status": "PROVISIONAL",
+  "stale_reason": "Configured public validation source latest complete row is 2026-11-25, while the latest expected completed weekday is 2026-11-26; missing required full Cash/3M/Stocks set was not fabricated."
 }
